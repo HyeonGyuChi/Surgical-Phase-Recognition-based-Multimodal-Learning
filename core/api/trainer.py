@@ -24,8 +24,8 @@ class Trainer():
         self.current_epoch = 1
         
         # make log directory
-        self.config.save_path += '/{}-cb-loss-ski_swin-type-c-pair'.format(self.config.model)
-        # self.config.save_path += '/{}-test'.format(self.config.model)
+        self.config.save_path += '/{}-cb-loss-ski_ocr2_test'.format(self.config.model)
+        # self.config.save_path += '/{}-cb-loss-ski_ocr-type-c-pair'.format(self.config.model)
         os.makedirs(self.config.save_path, exist_ok=True)
                 
 

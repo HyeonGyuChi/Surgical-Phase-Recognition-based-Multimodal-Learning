@@ -61,8 +61,6 @@ class JIGSAWSDataset(torch.utils.data.Dataset):
         self.data_dict = {}
         self.load_data()
 
-        print(len(self.data_dict[list(self.data_dict.keys())[0]]), len(self.labels))
-
         if self.state == 'train':
             self.aug = Augmentor(self.config.augmentations)
         elif self.state == 'valid':

@@ -296,7 +296,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
         self.data_dict['kinematic'] = {}
 
-        target_path = self.data_path + '/Seg_kine3'
+        target_path = self.data_path + '/Seg_kine4'
         file_list = glob(target_path + '/*.pkl')
         file_list = natsort.natsorted(file_list)
 

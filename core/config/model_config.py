@@ -68,7 +68,9 @@ def add_multi_args(parser):
                         # 'restore_path': 'logs/lstm-cb-loss/epoch:44-val_loss:8.2361.pth',
                         'input_size': 4,
                         # 'restore_path': 'logs/lstm-cb-loss-ski/epoch:49-val_loss:9.3289.pth',
-                        'restore_path': 'logs/lstm-cb-loss-ski_swin/epoch:37-val_loss:9.2838.pth',
+                        # 'restore_path': 'logs/lstm-cb-loss-ski_swin/epoch:37-val_loss:9.2838.pth',
+                        # 'restore_path': 'logs/lstm-cb-loss-ski_ocr/epoch:45-val_loss:9.2781.pth',
+                        'restore_path': 'logs/lstm-cb-loss-ski_ocr2_test/epoch:26-val_loss:9.4259.pth',
                         'feature_size': 256,
                     },
                     # other modality

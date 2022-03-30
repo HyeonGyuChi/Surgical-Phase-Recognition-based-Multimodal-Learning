@@ -8,7 +8,7 @@ import cv2
 
 base_path = '/dataset3/multimodal'
 data_path = base_path + '/PETRAW/Training'
-target_path = data_path + '/Segmentation3'
+target_path = data_path + '/Segmentation4'
 save_path = data_path + '/Seg_kine3'
 
 os.makedirs(save_path, exist_ok=True)
@@ -17,7 +17,7 @@ file_list = natsort.natsorted(os.listdir(target_path))
 
 N = 10
 split = len(file_list) // N
-st = 9
+st = 0
 
 st_idx = st*split
 ed_idx = (st+1)*split
@@ -26,32 +26,33 @@ if ed_idx > len(file_list):
 
 file_list = file_list[st_idx:ed_idx]
 
-
 for key_val in file_list:
     print(f'{key_val} start!')
     dpath = target_path + '/{}'.format(key_val)
     # frame_list = glob(dpath + '/*.npz')
-    frame_list = glob(dpath + '/*.jpg')
+    frame_list = glob(dpath + '/*')
     frame_list = natsort.natsorted(frame_list)
     
     traj = np.zeros((len(frame_list), 4))
     
     for fi, fpath in enumerate(tqdm(frame_list)):
         # img = np.load(fpath)['arr_0']
-        img = cv2.imread(fpath)[:,:,::-1]
+        # img = cv2.imread(fpath)[:,:,::-1]
+        img = cv2.imread(fpath)
+        img = cv2.resize(img, dsize=(512, 512))
         h,w,c = img.shape
         
         new_img = np.zeros((h,w))
         
-        ids = np.where(img[:,:,0]>0)
+        ids = np.where(img[:,:,0]>0) # blue
         if len(ids[0]) > 0:
             new_img[ids[0], ids[1]] = 1
         
-        ids = np.where(img[:,:,1]>0)
+        ids = np.where(img[:,:,1]>0) # green
         if len(ids[0]) > 0:
             new_img[ids[0], ids[1]] += 2
         
-        ids = np.where(img[:,:,2]>0)
+        ids = np.where(img[:,:,2]>0) # red
         if len(ids[0]) > 0:
             new_img[ids[0], ids[1]] += 4
         
@@ -67,8 +68,10 @@ for key_val in file_list:
         else:
             left_x, left_y = -1, -1
     
-        traj[fi, :] = [left_x, left_y, right_x, right_y]
-    
+        # traj[fi, :] = [left_x, left_y, right_x, right_y]
+        traj[fi, :] = [right_x, right_y, left_x, left_y]
+
+
     for ti in range(len(traj)):
         info = traj[ti, :]
         
