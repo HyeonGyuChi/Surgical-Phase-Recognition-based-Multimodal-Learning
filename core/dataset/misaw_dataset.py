@@ -29,9 +29,9 @@ kinematic_all_columns = [
 
 
 class MISAWDataset(torch.utils.data.Dataset):
-    def __init__(self, config, state='train'):
+    def __init__(self, args, state='train'):
         self.state = state
-        self.config = config
+        self.args = args
         
         self.label_phase_pair = {'Idle':0, 'Suturing':1, 'Knot tying':2}
         self.label_step_pair = {'Idle':0, 
@@ -46,15 +46,15 @@ class MISAWDataset(torch.utils.data.Dataset):
                                 'Pass through': 9, 'Pull': 10, 'Push': 11,
                                 }         
 
-        self.dtype = self.config.data_type
-        self.task = self.config.task
+        self.dtype = self.args.data_type
+        self.task = self.args.task
 
         if self.state == 'train':
-            self.data_path = self.config.data_base_path + '/MISAW/train'
-            self.aug = Augmentor(self.config.augmentations)
+            self.data_path = self.args.data_base_path + '/MISAW/train'
+            self.aug = Augmentor(self.args.augmentations)
         elif self.state == 'valid':
-            self.data_path = self.config.data_base_path + '/MISAW/test'
-            self.aug = Augmentor(self.config.val_augmentations)
+            self.data_path = self.args.data_base_path + '/MISAW/test'
+            self.aug = Augmentor(self.args.val_augmentations)
             
         self.load_data()
 
@@ -107,9 +107,9 @@ class MISAWDataset(torch.utils.data.Dataset):
 
     def preprocessing(self):
         # subsample
-        sample_rate = self.config.subsample_ratio
+        sample_rate = self.args.subsample_ratio
         go_subsample = sample_rate > 1 
-        seq_size = self.config.clip_size
+        seq_size = self.args.clip_size
         
         if go_subsample:
             for key, _data in self.data_dict.items():
@@ -123,7 +123,7 @@ class MISAWDataset(torch.utils.data.Dataset):
         if self.state != 'train':
             stride = int(seq_size)
         else:
-            stride = int(self.config.clip_size * self.config.overlap_ratio)
+            stride = int(self.args.clip_size * self.args.overlap_ratio)
 
         for key, _data in self.data_dict.items():
             seq_data = []
@@ -132,8 +132,8 @@ class MISAWDataset(torch.utils.data.Dataset):
                 d_len = len(_data[dir_name])
                 
                 for st in range(0, d_len, stride):
-                    if st+self.config.clip_size < d_len:
-                        seq_data.append(_data[dir_name][st:st+self.config.clip_size])
+                    if st+self.args.clip_size < d_len:
+                        seq_data.append(_data[dir_name][st:st+self.args.clip_size])
                     else:
                         break
                     
@@ -147,8 +147,8 @@ class MISAWDataset(torch.utils.data.Dataset):
 
             for st in range(0, d_len, stride):
                 if st+seq_size < d_len:
-                    if self.config.inference_per_frame:
-                        seq_data.append(data[st:st+self.config.clip_size])
+                    if self.args.inference_per_frame:
+                        seq_data.append(data[st:st+self.args.clip_size])
                     else:
                         seq_data.append(data[st:st+1])
                 else:

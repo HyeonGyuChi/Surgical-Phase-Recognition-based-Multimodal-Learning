@@ -8,16 +8,9 @@ def parse_opts():
 
     # --------------- Model basic info --------------------
     parser.add_argument('--model',
-            default='mobilenetv3_large_100',
+        #     default='mobilenetv3_large_100',
+            default='resnet18',
             type=str,
-            # choices=['vgg11', 'vgg13', 'vgg16', 'vgg19', 'vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn', 
-            #             'resnet18', 'resnet34', 'resnet50', 'wide_resnet50_2', 'resnext50_32x4d',
-            #             'mobilenet_v2', 'mobilenet_v3_small', 'mobilenet_v3_large', 'squeezenet1_0', 'squeezenet1_1',
-            #             'efficientnet_b0', 'efficientnet_b1', 'efficientnet_b2', 'efficientnet_b3', 'efficientnet_b4', 
-            #             'efficientnet_b5', 'efficientnet_b6', 'efficientnet_b7',
-            #             'ig_resnext101_32x48d', 'swin_large_patch4_window7_224', 'mobilenetv3_large_100_miil',
-            #             'mobilenetv3_large_100', 'tf_efficientnetv2_b0', 'tf_efficientnet_b0_ns',
-            #             'repvgg_b0', 'repvgg-a0'],
             help='Select model to train/test')
     
     parser.add_argument('--pretrained',

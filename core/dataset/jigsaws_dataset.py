@@ -42,16 +42,16 @@ all_columns = ['mtm_l_tt_x','mtm_l_tt_y','mtm_l_tt_z',
 
 
 class JIGSAWSDataset(torch.utils.data.Dataset):
-    def __init__(self, config, state='train'):
-        self.config = config
+    def __init__(self, args, state='train'):
+        self.args = args
         self.state = state
         self.label_pair = {'G1':1, 'G2':2, 'G3':3,
                               'G4':4, 'G5':5, 'G6':6,
                               'G8':7, 'G9':8, 'G10':9, 'G11':10}
         
-        self.data_path = self.config.data_base_path + '/JIGSAWS_all'
-        self.dtype = self.config.data_type
-        self.task = self.config.task
+        self.data_path = self.args.data_base_path + '/JIGSAWS_all'
+        self.dtype = self.args.data_type
+        self.task = self.args.task
 
         self.users = ['B','C','D','E','F','G','I','H']
         self.trial_no = ['001','002','003','004','005']
@@ -62,9 +62,9 @@ class JIGSAWSDataset(torch.utils.data.Dataset):
         self.load_data()
 
         if self.state == 'train':
-            self.aug = Augmentor(self.config.augmentations)
+            self.aug = Augmentor(self.args.augmentations)
         elif self.state == 'valid':
-            self.aug = Augmentor(self.config.val_augmentations)
+            self.aug = Augmentor(self.args.val_augmentations)
 
 
     def __len__(self):
@@ -103,7 +103,7 @@ class JIGSAWSDataset(torch.utils.data.Dataset):
             fold b, c, d, e, f, g, i, h -> user based
             -> fold value : -1 ~ -8
         """
-        val_index = self.config.fold
+        val_index = self.args.fold
         self.target_list = []
         
         if self.state == 'train':
@@ -146,7 +146,7 @@ class JIGSAWSDataset(torch.utils.data.Dataset):
      
     def preprocessing(self):
         # subsample
-        sample_rate = self.config.subsample_ratio
+        sample_rate = self.args.subsample_ratio
         go_subsample = sample_rate > 1 
         
         if go_subsample:
@@ -161,7 +161,7 @@ class JIGSAWSDataset(torch.utils.data.Dataset):
         if self.state != 'train':
             stride = int(seq_size)
         else:
-            stride = int(self.config.clip_size * self.config.overlap_ratio)
+            stride = int(self.args.clip_size * self.args.overlap_ratio)
 
         for key, _data in self.data_dict.items():
             seq_data = []
@@ -170,8 +170,8 @@ class JIGSAWSDataset(torch.utils.data.Dataset):
                 d_len = len(_data[dir_name])
                 
                 for st in range(0, d_len, stride):
-                    if st+self.config.clip_size < d_len:
-                        seq_data.append(_data[dir_name][st:st+self.config.clip_size])
+                    if st+self.args.clip_size < d_len:
+                        seq_data.append(_data[dir_name][st:st+self.args.clip_size])
                     else:
                         break
                     
@@ -183,9 +183,9 @@ class JIGSAWSDataset(torch.utils.data.Dataset):
             d_len = len(data)
 
             for st in range(0, d_len, stride):
-                if st+self.config.clip_size < d_len:
-                    if self.config.inference_per_frame:
-                        seq_data.append(data[st:st+self.config.clip_size])
+                if st+self.args.clip_size < d_len:
+                    if self.args.inference_per_frame:
+                        seq_data.append(data[st:st+self.args.clip_size])
                     else:
                         seq_data.append(data[st:st+1])
                 else:
