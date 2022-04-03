@@ -93,18 +93,18 @@ class ResNet(nn.Module):
                  block,
                  layers,
                  block_inplanes,
-                 config):
+                 args):
         super().__init__()
         
-        self.config = config
-        self.device = self.config.device
-        n_input_channels = self.config.n_input_channels
-        conv1_t_size = self.config.conv1_t_size
-        conv1_t_stride = self.config.conv1_t_stride
-        self.no_max_pool = self.config.no_max_pool
-        shortcut_type = self.config.shortcut_type
-        widen_factor = self.config.widen_factor
-        self.seq_size = self.config.clip_size
+        self.args = args
+        self.device = self.args.device
+        n_input_channels = self.args.n_input_channels
+        conv1_t_size = self.args.conv1_t_size
+        conv1_t_stride = self.args.conv1_t_stride
+        self.no_max_pool = self.args.no_max_pool
+        shortcut_type = self.args.shortcut_type
+        widen_factor = self.args.widen_factor
+        self.seq_size = self.args.clip_size
 
         block_inplanes = [int(x * widen_factor) for x in block_inplanes]
         self.in_planes = block_inplanes[0]
@@ -132,7 +132,7 @@ class ResNet(nn.Module):
 
         self.linear = torch.nn.Linear(self.linear_dim, self.linear_dim)
 
-        if self.config.use_normsoftmax:
+        if self.args.use_normsoftmax:
             self.to_seq = torch.nn.Linear(self.linear_dim, self.linear_dim * self.seq_size)
 
         self.classifiers = []
@@ -219,31 +219,31 @@ class ResNet(nn.Module):
             out = self.Softmax(x)
             outputs.append(out)
         
-        if self.config.use_normsoftmax:
+        if self.args.use_normsoftmax:
             emb = self.to_seq(feat).view(x.size(0), self.seq_size, -1)
             outputs.append(emb)
         
         return outputs
 
 
-def generate_resnet(config):
-    model_depth = config.model_depth
+def generate_resnet(args):
+    model_depth = args.model_depth
     
     assert model_depth in [10, 18, 34, 50, 101, 152, 200]
 
     if model_depth == 10:
-        model = ResNet(BasicBlock, [1, 1, 1, 1], get_inplanes(), config)
+        model = ResNet(BasicBlock, [1, 1, 1, 1], get_inplanes(), args)
     elif model_depth == 18:
-        model = ResNet(BasicBlock, [2, 2, 2, 2], get_inplanes(), config)
+        model = ResNet(BasicBlock, [2, 2, 2, 2], get_inplanes(), args)
     elif model_depth == 34:
-        model = ResNet(BasicBlock, [3, 4, 6, 3], get_inplanes(), config)
+        model = ResNet(BasicBlock, [3, 4, 6, 3], get_inplanes(), args)
     elif model_depth == 50:
-        model = ResNet(Bottleneck, [3, 4, 6, 3], get_inplanes(), config)
+        model = ResNet(Bottleneck, [3, 4, 6, 3], get_inplanes(), args)
     elif model_depth == 101:
-        model = ResNet(Bottleneck, [3, 4, 23, 3], get_inplanes(), config)
+        model = ResNet(Bottleneck, [3, 4, 23, 3], get_inplanes(), args)
     elif model_depth == 152:
-        model = ResNet(Bottleneck, [3, 8, 36, 3], get_inplanes(), config)
+        model = ResNet(Bottleneck, [3, 8, 36, 3], get_inplanes(), args)
     elif model_depth == 200:
-        model = ResNet(Bottleneck, [3, 24, 36, 3], get_inplanes(), config)
+        model = ResNet(Bottleneck, [3, 24, 36, 3], get_inplanes(), args)
 
     return model

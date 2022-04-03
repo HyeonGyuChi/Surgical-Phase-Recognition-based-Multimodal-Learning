@@ -16,27 +16,27 @@ from core.utils.metric import MetricHelper
 
 class Trainer():
     # Multimodal Trainer
-    def __init__(self, config: dict):
-        self.config = config
+    def __init__(self, args: dict):
+        self.args = args
         self.setup()
         
     def setup(self):
         self.current_epoch = 1
         
         # make log directory
-        self.config.save_path += '/{}-cb-loss-ski_ocr2_test'.format(self.config.model)
-        # self.config.save_path += '/{}-cb-loss-ski_ocr-type-c-pair'.format(self.config.model)
-        os.makedirs(self.config.save_path, exist_ok=True)
+        self.args.save_path += '/{}-cb-loss-ski_ocr'.format(self.args.model)
+        # self.args.save_path += '/{}-cb-loss-ski_ocr-type-c-pair'.format(self.args.model)
+        os.makedirs(self.args.save_path, exist_ok=True)
                 
 
-        param_dict = vars(self.config)
-        with open(self.config.save_path + '/params.json', 'w') as f:
+        param_dict = vars(self.args)
+        with open(self.args.save_path + '/params.json', 'w') as f:
             json.dump(param_dict, f, indent=4)
 
 
         # Load dataset
         print('======= Load Dataset =======')
-        self.train_loader, self.val_loader = get_dataset(self.config)
+        self.train_loader, self.val_loader = get_dataset(self.args)
         train_cnt_list, val_cnt_list = self.train_loader.dataset.class_cnt, self.val_loader.dataset.class_cnt
         total_cnt_list = []
         cls_weights = []
@@ -63,75 +63,75 @@ class Trainer():
                 else:
                     cls_weights[idx] = torch.Tensor(total_cnt_list[idx]).cuda()
         
-        self.config.class_cnt = total_cnt_list
-        self.config.class_weights = cls_weights #self.train_loader.dataset.class_weights #cls_weights
+        self.args.class_cnt = total_cnt_list
+        self.args.class_weights = cls_weights #self.train_loader.dataset.class_weights #cls_weights
         
         # Load model
         print('======= Load Model =======')
-        if self.config.model == 'multi':
-            self.model = get_fusion_model(self.config)
+        if self.args.model == 'multi':
+            self.model = get_fusion_model(self.args)
         else:
-            self.model = get_model(self.config)
+            self.model = get_model(self.args)
         
-        self.n_task = task_dict[self.config.dataset][self.config.task][0]
+        self.n_task = task_dict[self.args.dataset][self.args.task][0]
         self.n_class_list = []
         
-        if self.config.task != 'all':
-            if self.config.dataset == 'petraw' and self.config.task == 'action':
-                self.n_class_list.append(task_dict[self.config.dataset][self.config.task][1] // 2)
-                self.n_class_list.append(task_dict[self.config.dataset][self.config.task][1] // 2)
+        if self.args.task != 'all':
+            if self.args.dataset == 'petraw' and self.args.task == 'action':
+                self.n_class_list.append(task_dict[self.args.dataset][self.args.task][1] // 2)
+                self.n_class_list.append(task_dict[self.args.dataset][self.args.task][1] // 2)
             else:
-                self.n_class_list = [task_dict[self.config.dataset][self.config.task][1]]
+                self.n_class_list = [task_dict[self.args.dataset][self.args.task][1]]
         else:
-            for task in task_dict[self.config.dataset]:
+            for task in task_dict[self.args.dataset]:
                 if task != 'all':
-                    if self.config.dataset == 'petraw' and task == 'action':
-                        self.n_class_list.append(task_dict[self.config.dataset][task][1] // 2)
-                        self.n_class_list.append(task_dict[self.config.dataset][task][1] // 2)
+                    if self.args.dataset == 'petraw' and task == 'action':
+                        self.n_class_list.append(task_dict[self.args.dataset][task][1] // 2)
+                        self.n_class_list.append(task_dict[self.args.dataset][task][1] // 2)
                     else:
-                        self.n_class_list.append(task_dict[self.config.dataset][task][1])
+                        self.n_class_list.append(task_dict[self.args.dataset][task][1])
         
         self.model.set_classifiers(self.n_class_list)
-        self.config.n_class_list = self.n_class_list
+        self.args.n_class_list = self.n_class_list
         
         # Load loss function
         print('======= Load Loss Function =======')
-        self.loss_fn = get_loss(self.config)
+        self.loss_fn = get_loss(self.args)
         
         # Load Optimizer, scheduler
         print('======= Load Optimizers =======')
-        self.optimizer, self.scheduler = configure_optimizer(self.config, self.model)
+        self.optimizer, self.scheduler = configure_optimizer(self.args, self.model)
     
         # Set device type [cpu or cuda]
-        self.model = self.model.to(self.config.device)
+        self.model = self.model.to(self.args.device)
         
         # Set multi-gpu
-        if self.config.num_gpus > 1:
+        if self.args.num_gpus > 1:
             print('======= Set Multi-GPU =======')
             self.model = nn.DataParallel(self.model)
             # self.model = nn.DataParallel(self.model, 
-            #                             device_ids=list(range(config['model']['params']['n_gpus'])))
+            #                             device_ids=list(range(args['model']['params']['n_gpus'])))
             
             
         # Load pre-trained model
-        if self.config.restore_path is not None:
+        if self.args.restore_path is not None:
             print('======= Load Pretrained Model =======')
             
-            states = torch.load(self.config.restore_path)           
+            states = torch.load(self.args.restore_path)           
             self.model.load_state_dict(states['model'])
             
-            if self.config.resume:
+            if self.args.resume:
                 self.optimizer.load_state_dict(states['optimizer'])
                 self.scheduler.load_state_dict(states['scheduler'])
                 self.current_epoch = states['epoch']
         
         print('======= Set Metric Helper =======')
-        self.metric_helper = MetricHelper(self.config)
+        self.metric_helper = MetricHelper(self.args)
         
     def fit(self):
         start_epoch = self.current_epoch
         
-        for epoch in range(start_epoch, self.config.max_epoch + 1):
+        for epoch in range(start_epoch, self.args.max_epoch + 1):
             self.current_epoch = epoch
             self.metric_helper.update_epoch(epoch)
             
@@ -148,10 +148,10 @@ class Trainer():
             self.optimizer.zero_grad()
             
             x, y = data
-            if self.config.device == 'cuda':
+            if self.args.device == 'cuda':
                 for k in x.keys():
-                    x[k] = x[k].to(self.config.device)
-                y = y.to(self.config.device)
+                    x[k] = x[k].to(self.args.device)
+                y = y.to(self.args.device)
                 
             y_hat, loss = self.forward(x, y)
             
@@ -168,10 +168,10 @@ class Trainer():
 
         for data in tqdm(self.val_loader, desc='[Epoch {} - Validation Phase] : '.format(self.current_epoch)):
             x, y = data
-            if self.config.device == 'cuda':
+            if self.args.device == 'cuda':
                 for k in x.keys():
-                    x[k] = x[k].to(self.config.device)
-                y = y.to(self.config.device)
+                    x[k] = x[k].to(self.args.device)
+                y = y.to(self.args.device)
                 
             y_hat, loss = self.forward(x, y)
             
@@ -191,7 +191,7 @@ class Trainer():
         self.metric_helper.save_loss_pic()
         metric = self.metric_helper.calc_metric()
         
-        if self.config.lr_scheduler == 'reduced':
+        if self.args.lr_scheduler == 'reduced':
             self.scheduler.step(self.metric_helper.get_loss('valid'))
         else:
             self.scheduler.step()
@@ -200,7 +200,7 @@ class Trainer():
             self.save_checkpoint()
         
     def forward(self, x, y):
-        if self.config.model == 'multi':
+        if self.args.model == 'multi':
             y_hat, fuse_loss = self.model(x)
             
             loss = self.calc_loss(y_hat, y)
@@ -219,7 +219,7 @@ class Trainer():
         loss = 0
         loss_div_cnt = 0
 
-        if 'ce' in self.config.loss_fn:
+        if 'ce' in self.args.loss_fn:
             for ti in range(len(self.n_class_list)):
                 for seq in range(y.shape[1]):
                     loss += self.loss_fn(y_hat[ti][:, seq, ], y[:, seq, ti])
@@ -230,7 +230,7 @@ class Trainer():
                     loss += self.loss_fn[ti](y_hat[ti][:, seq, :], y[:, seq, ti])
                 loss_div_cnt += 1
                     
-            if self.config.use_normsoftmax:
+            if self.args.use_normsoftmax:
                 for ti in range(len(self.n_class_list)):
                     loss += self.loss_fn[ti+4](y_hat[4], y[:, :, ti])   
                 loss_div_cnt += 1
@@ -240,22 +240,22 @@ class Trainer():
         return loss
     
     def save_checkpoint(self):
-        saved_pt_list = glob(os.path.join(self.config.save_path, '*pth'))
+        saved_pt_list = glob(os.path.join(self.args.save_path, '*pth'))
 
-        if len(saved_pt_list) > self.config.save_top_n:
+        if len(saved_pt_list) > self.args.save_top_n:
             saved_pt_list = natsort.natsorted(saved_pt_list)
 
-            for li in saved_pt_list[:-(self.config.save_top_n+1)]:
+            for li in saved_pt_list[:-(self.args.save_top_n+1)]:
                 os.remove(li)
 
         save_path = '{}/epoch:{}-{}:{:.4f}.pth'.format(
-                    self.config.save_path,
+                    self.args.save_path,
                     self.current_epoch,
-                    self.config.target_metric,
+                    self.args.target_metric,
                     self.metric_helper.get_best_metric(),
                 )
 
-        if self.config.num_gpus > 1:
+        if self.args.num_gpus > 1:
             ckpt_state = {
                 'model': self.model.module.state_dict(),
                 'optimizer': self.optimizer.module.state_dict(),
@@ -273,3 +273,29 @@ class Trainer():
         torch.save(ckpt_state, save_path)
 
         print('[+] save checkpoint : ', save_path)
+
+        if self.current_epoch == self.args.max_epoch: # last epoch checkpoint saving
+            save_path = '{}/epoch:{}-{}:{:.4f}-last.pth'.format(
+                        self.args.save_path,
+                        self.current_epoch,
+                        self.args.target_metric,
+                        self.metric_helper.get_best_metric(),
+                    )
+
+            if self.args.num_gpus > 1:
+                ckpt_state = {
+                    'model': self.model.module.state_dict(),
+                    'optimizer': self.optimizer.module.state_dict(),
+                    'scheduler': self.scheduler.state_dict(),
+                    'epoch': self.current_epoch,
+                }
+            else:
+                ckpt_state = {
+                    'model': self.model.state_dict(),
+                    'optimizer': self.optimizer.state_dict(),
+                    'scheduler': self.scheduler.state_dict(),
+                    'epoch': self.current_epoch,
+                }
+
+            torch.save(ckpt_state, save_path)
+            print('[+] save checkpoint (Last Epoch) : ', save_path)

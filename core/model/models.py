@@ -9,5 +9,5 @@ model_dict = {
 }
 
 
-def get_model(config):
-    return model_dict[config.model](config)
+def get_model(args):
+    return model_dict[args.model](args)

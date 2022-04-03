@@ -13,11 +13,11 @@ class MetricHelper():
     """
         Help metric computation.
     """
-    def __init__(self, config):
-        self.config = config        
-        self.n_classes = self.config.n_classes
+    def __init__(self, args):
+        self.args = args        
+        self.n_classes = self.args.n_classes
         self.classes = list(range(self.n_classes))
-        self.target_metric = self.config.target_metric
+        self.target_metric = self.args.target_metric
         if 'loss' in self.target_metric:
             self.best_metric = math.inf
         else:
@@ -33,16 +33,16 @@ class MetricHelper():
             'valid': [],
         }
         
-        n_result = task_dict[self.config.dataset][self.config.task][0]
-        n_result2 = task_dict[self.config.dataset][self.config.task][-1]
+        n_result = task_dict[self.args.dataset][self.args.task][0]
+        n_result2 = task_dict[self.args.dataset][self.args.task][-1]
         
         self.output_dict = {
             'pred': [list() for _ in range(n_result)],
             'gt': [list() for _ in range(n_result)],
         }
         
-        self.results = np.zeros((self.config.max_epoch, n_result))
-        self.results2 = np.zeros((self.config.max_epoch, n_result2))
+        self.results = np.zeros((self.args.max_epoch, n_result))
+        self.results2 = np.zeros((self.args.max_epoch, n_result2))
         
     def update_epoch(self, epoch):
         self.epoch = epoch
@@ -153,7 +153,7 @@ class MetricHelper():
         plt.plot(range(self.epoch), self.loss_dict['valid'])
         
         plt.legend(['Train', 'Val'], fontsize=40)
-        plt.savefig(self.config.save_path + '/loss.png')
+        plt.savefig(self.args.save_path + '/loss.png')
         
         
     def update_best_metric(self, metric):
@@ -177,7 +177,7 @@ class MetricHelper():
         
     def save_results(self):
         cols = ['Balance-Acc' + f"_{i}" for i in range(self.results.shape[-1])] + ['Acc' + f"_{i}" for i in range(self.results2.shape[-1])]
-        save_path = self.config.save_path + '/result_{}.csv'.format(self.config.model)
+        save_path = self.args.save_path + '/result_{}.csv'.format(self.args.model)
         
         data = [*list(self.results[self.epoch-1, :]), *list(self.results2[self.epoch-1, :])]
 

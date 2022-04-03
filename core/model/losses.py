@@ -14,9 +14,9 @@ loss_dict = {
 }
 
 
-def get_loss(config):    
-    if 'ce' not in config.loss_fn:
-        return loss_dict[config.loss_fn](config)
+def get_loss(args):    
+    if 'ce' not in args.loss_fn:
+        return loss_dict[args.loss_fn](args)
     else:
-        return loss_dict[config.loss_fn]()
+        return loss_dict[args.loss_fn]()
     

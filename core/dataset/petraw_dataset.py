@@ -14,11 +14,11 @@ from core.utils.augmentor import Augmentor#, SignalAugmentor
 
 
 class PETRAWDataset(torch.utils.data.Dataset):
-    def __init__(self, config, state='train'):
-        self.config = config
+    def __init__(self, args, state='train'):
+        self.args = args
         self.state = state
-        self.data_path = config.data_base_path + '/PETRAW'
-        self.task = config.task
+        self.data_path = args.data_base_path + '/PETRAW'
+        self.task = args.task
 
         self.name_to_phase = { # 3
             'Idle': 0,
@@ -50,12 +50,12 @@ class PETRAWDataset(torch.utils.data.Dataset):
         self.load_data()
 
         if self.state == 'train':
-            self.aug = Augmentor(self.config.augmentations)
-            self.mk_aug = Augmentor(self.config.mask_augmentations)
+            self.aug = Augmentor(self.args.augmentations)
+            self.mk_aug = Augmentor(self.args.mask_augmentations)
 
         elif self.state == 'valid':
-            self.aug = Augmentor(self.config.val_augmentations)
-            self.mk_aug = Augmentor(self.config.mask_augmentations)
+            self.aug = Augmentor(self.args.val_augmentations)
+            self.mk_aug = Augmentor(self.args.mask_augmentations)
         
     def __len__(self):
         return len(self.labels)
@@ -103,7 +103,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
             fold 1 ~ 5
         """
-        val_index = self.config.fold
+        val_index = self.args.fold
         self.target_list = []
         
         target_path = self.data_path + '/Procedural_description'
@@ -134,25 +134,25 @@ class PETRAWDataset(torch.utils.data.Dataset):
         self.label_dict = {}
 
         # load video
-        if 'vd' in self.config.data_type:
+        if 'vd' in self.args.data_type:
             print('[+] Load Video data')
             self.load_video()
             print('[-] Load Video data ... done')
 
         # load segmentation mask
-        if 'mk' in self.config.data_type:
+        if 'mk' in self.args.data_type:
             print('[+] Load mask data')
             self.load_masks()
             print('[-] Load mask data ... done')
 
         # load kinematics
-        if 'ki' in self.config.data_type:
+        if 'ki' in self.args.data_type:
             print('[+] Load kinematic data')
             self.load_kinematics()
             print('[-] Load kinematic data ... done')
             
         # load seg-kinematics
-        if 'ski' in self.config.data_type:
+        if 'ski' in self.args.data_type:
             print('[+] Load seg-kinematic data')
             self.load_seg_kinematics()
             print('[-] Load seg-kinematic data ... done')
@@ -170,9 +170,9 @@ class PETRAWDataset(torch.utils.data.Dataset):
 
     def preprocessing(self):
         # subsample
-        sample_rate = self.config.subsample_ratio
+        sample_rate = self.args.subsample_ratio
         go_subsample = sample_rate > 1 
-        seq_size = self.config.clip_size
+        seq_size = self.args.clip_size
         
         if go_subsample:
             for key, _data in self.data_dict.items():
@@ -188,7 +188,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         if self.state != 'train':
             stride = int(seq_size)
         else:
-            stride = int(seq_size * self.config.overlap_ratio)
+            stride = int(seq_size * self.args.overlap_ratio)
 
         for key, _data in self.data_dict.items():
             seq_data = []
@@ -212,7 +212,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
 
             for st in range(0, d_len, stride):
                 if st+seq_size < d_len:
-                    if self.config.inference_per_frame:
+                    if self.args.inference_per_frame:
                         seq_data.append(data[st:st+seq_size])
                     else:
                         seq_data.append(data[st:st+1])
@@ -296,7 +296,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
         self.data_dict['kinematic'] = {}
 
-        target_path = self.data_path + '/Seg_kine4'
+        target_path = self.data_path + '/Seg_kine3'
         file_list = glob(target_path + '/*.pkl')
         file_list = natsort.natsorted(file_list)
 

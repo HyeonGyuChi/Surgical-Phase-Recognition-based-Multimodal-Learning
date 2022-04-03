@@ -3,11 +3,11 @@ import torch.nn.functional as F
 from core.config.task_info import task_dict
 
 
-def generate_lstm(config):
-    arch_name = config.model
+def generate_lstm(args):
+    arch_name = args.model
     
     if arch_name == 'lstm':
-        model = LSTM(config)
+        model = LSTM(args)
 
     return model
 
@@ -17,20 +17,20 @@ class LSTM(torch.nn.Module):
         - output : output for all input sequences (usually uses for classification)
         - hidden_state : the hidden_state in last time as next hidden state input (future prediction task)
     """
-    def __init__(self, config):
+    def __init__(self, args):
         super(LSTM, self).__init__()
 
-        self.config = config
-        self.device = self.config.device
-        self.n_features = self.config.input_size
-        self.seq_size = self.config.clip_size
-        self.n_layers = self.config.n_layer # number of LSTM layers (stacked)
-        self.n_hidden = self.config.hidden_size # number of hidden states
-        self.linear_dim = self.config.linear_dim
-        self.bidirectional = self.config.use_bidirectional
+        self.args = args
+        self.device = self.args.device
+        self.n_features = self.args.input_size
+        self.seq_size = self.args.clip_size
+        self.n_layers = self.args.n_layer # number of LSTM layers (stacked)
+        self.n_hidden = self.args.hidden_size # number of hidden states
+        self.linear_dim = self.args.linear_dim
+        self.bidirectional = self.args.use_bidirectional
         
     
-        self.lstm = torch.nn.LSTM(input_size = self.config.input_size, 
+        self.lstm = torch.nn.LSTM(input_size = self.args.input_size, 
                                  hidden_size = self.n_hidden,
                                  num_layers = self.n_layers, 
                                  batch_first = True,

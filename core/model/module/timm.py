@@ -17,16 +17,16 @@ class TIMM(nn.Module):
         3. mobilenetv3_large_100
         
     """
-    def __init__(self, config):
+    def __init__(self, args):
         super().__init__()
         
-        self.config = config
-        arch_name = self.config.model
+        self.args = args
+        arch_name = self.args.model
         
         model = timm.create_model(arch_name, pretrained=True)
         
         # help documents - https://fastai.github.io/timmdocs/create_model (how to use feature_extractor in timm)
-        if self.config.model == 'swin_large_patch4_window7_224':
+        if self.args.model == 'swin_large_patch4_window7_224':
             self.feature_module = nn.Sequential(
                 *list(model.children())[:-2],
             )
@@ -36,12 +36,12 @@ class TIMM(nn.Module):
                 *list(model.children())[:-1]
             )
             
-        self.classifier = nn.Linear(model.num_features, config.n_classes)
+        self.classifier = nn.Linear(model.num_features, args.n_classes)
         
     def forward(self, x):
         features = self.feature_module(x)
         
-        if self.config.model == 'swin_large_patch4_window7_224':
+        if self.args.model == 'swin_large_patch4_window7_224':
             features = self.gap(features.permute(0, 2, 1))
             
         output = self.classifier(features.view(x.size(0), -1))
