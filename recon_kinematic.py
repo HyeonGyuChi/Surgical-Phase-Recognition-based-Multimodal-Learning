@@ -6,10 +6,18 @@ import pickle
 from tqdm import tqdm
 import cv2
 
+# segmentation2 : deeplabv3+
+# segmentation3 : Swin
+# segmentation4 : OCR
+
+# Seg_kine : from deeplabv3+
+# Seg_kine2 : from Swin
+# Seg_kine3 : from OCR
+
 base_path = '/dataset3/multimodal'
 data_path = base_path + '/PETRAW/Training'
-target_path = data_path + '/Segmentation4'
-save_path = data_path + '/Seg_kine3'
+target_path = data_path + '/Segmentation2'
+save_path = data_path + '/Seg_kine5'
 
 os.makedirs(save_path, exist_ok=True)
 
@@ -29,19 +37,19 @@ file_list = file_list[st_idx:ed_idx]
 for key_val in file_list:
     print(f'{key_val} start!')
     dpath = target_path + '/{}'.format(key_val)
-    # frame_list = glob(dpath + '/*.npz')
     frame_list = glob(dpath + '/*')
     frame_list = natsort.natsorted(frame_list)
     
-    traj = np.zeros((len(frame_list), 4))
+    traj = np.zeros((len(frame_list), 10))
     
     for fi, fpath in enumerate(tqdm(frame_list)):
-        # img = np.load(fpath)['arr_0']
-        # img = cv2.imread(fpath)[:,:,::-1]
-        img = cv2.imread(fpath)
-        img = cv2.resize(img, dsize=(512, 512))
+        if 'npz' == fpath[-3:]:
+            img = np.load(fpath)['arr_0']
+        else:
+            img = cv2.imread(fpath)
+            img = cv2.resize(img, dsize=(512, 512))
+
         h,w,c = img.shape
-        
         new_img = np.zeros((h,w))
         
         ids = np.where(img[:,:,0]>0) # blue
@@ -59,34 +67,44 @@ for key_val in file_list:
         ids = np.where(new_img == 4)
         if len(ids[0]) > 0:
             right_x, right_y = np.mean(ids[1]), np.mean(ids[0])
+            right_bbox = (np.max(ids[1]) - np.min(ids[1])) * (np.max(ids[0])-np.min(ids[0]))
         else:
             right_x, right_y = -1, -1
+            right_bbox = -1
         
         ids = np.where(new_img == 2)
         if len(ids[0]) > 0:
             left_x, left_y= np.mean(ids[1]), np.mean(ids[0])
+            left_bbox = (np.max(ids[1]) - np.min(ids[1])) * (np.max(ids[0])-np.min(ids[0]))
         else:
             left_x, left_y = -1, -1
+            left_bbox = -1
     
-        # traj[fi, :] = [left_x, left_y, right_x, right_y]
-        traj[fi, :] = [right_x, right_y, left_x, left_y]
+        if left_bbox != -1:
+            left_eoa = left_bbox/(512*512)
+        if right_bbox != -1:
+            right_eoa = right_bbox/(512*512)
 
+        if fi == 0:
+            l_x_speed, l_y_speed = 0, 0
+            r_x_speed, r_y_speed = 0, 0
+        else:
+            l_x_speed, l_y_speed = (r_x_speed-traj[fi-1, 4]), (r_y_speed-traj[fi-1, 5])
+            r_x_speed, r_y_speed = (l_x_speed-traj[fi-1, 6]), (l_y_speed-traj[fi-1, 7])
+
+        if 'npz' == fpath[-3:]:
+            traj[fi, :] = [left_x, left_y, right_x, right_y, 
+                            l_x_speed, l_y_speed, r_x_speed, r_y_speed,
+                            left_eoa, right_eoa,
+                            ]
+        else:
+            traj[fi, :] = [right_x, right_y, left_x, left_y,
+                            r_x_speed, r_y_speed, l_x_speed, l_y_speed,
+                            right_eoa, left_eoa,
+                            ]
 
     for ti in range(len(traj)):
         info = traj[ti, :]
-        
-        # if np.isnan(info).any():
-        #     print(ti, np.isnan(info))
-        #     img = np.load(frame_list[ti])['arr_0']
-            
-        #     ids = np.where(img[:,:,0]>0)
-        #     ids2 = np.where(img[:,:,1]>0)
-        #     ids3 = np.where(img[:,:,2]>0)
-            
-        #     print(len(ids[0]), len(ids2[0]), len(ids3[0]))
-            
-        #     cv2.imwrite(f"./test_{ti}.png", img)
-            
         
         for di in range(len(info)):
             if np.isnan(info[di]):
@@ -124,12 +142,6 @@ for key_val in file_list:
                         info[di] = r_val
     
         traj[ti, :] = info
-        
-    
-    # print('a : ', len(np.array(traj == -1)[0]))
-    # print('b : ', len(np.isnan(traj)))
-    
-    # break
         
     save_path2 = save_path + '/{}_seg_ki.pkl'.format(key_val)
     with open(save_path2, 'wb') as f:

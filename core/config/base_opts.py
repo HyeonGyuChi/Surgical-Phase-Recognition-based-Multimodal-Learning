@@ -161,8 +161,8 @@ def parse_opts():
             help='Data location')
 
     parser.add_argument('--data_type',
-            default=['vd', 'ski'],
-        #     default=['ski'],
+        #     default=['vd', 'ski'],
+            default=['ski'],
             type=list,
             help='kinematic(ki), video(vd), other modality')
 

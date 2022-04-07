@@ -83,7 +83,7 @@ class Trainer():
         self.metric_helper = MetricHelper(self.args)
         
     def set_save_path(self):
-        self.args.save_path += '{}-{}_loss-{}-{}-{}'.format(
+        self.args.save_path += '/{}-{}_loss-{}-{}-'.format(
             self.args.model,
             self.args.loss_fn,
             self.args.dataset,
@@ -147,7 +147,6 @@ class Trainer():
                         self.n_class_list.append(task_dict[self.args.dataset][task][1] // 2)
                     else:
                         self.n_class_list.append(task_dict[self.args.dataset][task][1])
-
 
     def fit(self):
         start_epoch = self.current_epoch
@@ -262,7 +261,13 @@ class Trainer():
         return loss
     
     def save_checkpoint(self):
-        saved_pt_list = glob(os.path.join(self.args.save_path, '*pth'))
+        saved_pt_list = []
+
+        for fname in os.listdir(self.args.save_path):
+            if fname[-3:] == 'pth':
+                saved_pt_list.append(self.args.save_path + '/{}'.format(fname))
+
+        print(saved_pt_list)
 
         # top N개 빼고 삭제
         if len(saved_pt_list) > self.args.save_top_n:

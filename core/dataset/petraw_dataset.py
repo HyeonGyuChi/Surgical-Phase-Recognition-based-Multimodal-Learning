@@ -296,7 +296,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
         self.data_dict['kinematic'] = {}
 
-        target_path = self.data_path + '/Seg_kine3'
+        target_path = self.data_path + '/Seg_kine5'
         file_list = glob(target_path + '/*.pkl')
         file_list = natsort.natsorted(file_list)
 
@@ -307,6 +307,8 @@ class PETRAWDataset(torch.utils.data.Dataset):
                 with open(fpath, 'rb') as f:
                     data = pickle.load(f)
                     
+                data = np.concatenate((data[:, :4],data[:, -2:]), 1)
+
                 self.data_dict['kinematic'][key_val] = self.standardization(data)
                 # print(key_val, len(self.data_dict['kinematic'][key_val]))
                 
