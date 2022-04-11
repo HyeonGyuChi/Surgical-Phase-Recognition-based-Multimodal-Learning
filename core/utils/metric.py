@@ -131,7 +131,7 @@ class MetricHelper():
                 cnt += 1
         
             print('CLS BACC : {:.4f}'.format(metrics['Balance-Acc']))
-        
+
         # save accuracy
         self.save_results()
 
@@ -154,7 +154,6 @@ class MetricHelper():
         
         plt.legend(['Train', 'Val'], fontsize=40)
         plt.savefig(self.args.save_path + '/loss.png')
-        
         
     def update_best_metric(self, metric):
         target_met = 0    

@@ -36,7 +36,8 @@ class LSTM(torch.nn.Module):
                                  batch_first = True,
                                  bidirectional=self.bidirectional,)
         
-        self.linear = torch.nn.Linear(self.n_hidden*self.seq_size*(1+self.bidirectional), self.linear_dim)
+        self.linear = torch.nn.Linear(self.n_hidden*self.seq_size*(1+self.bidirectional), self.linear_dim * self.seq_size)
+        # self.linear = torch.nn.Linear(self.n_hidden*self.seq_size*(1+self.bidirectional), self.linear_dim)
         self.dropout = torch.nn.Dropout(0.3)
         
         self.classifiers = []
@@ -45,7 +46,8 @@ class LSTM(torch.nn.Module):
     
     def set_classifiers(self, n_class_list):
         for n_class in n_class_list:
-            self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class * self.seq_size).to(self.device))        
+            # self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class * self.seq_size).to(self.device))        
+            self.classifiers.append(torch.nn.Linear(self.linear_dim * self.seq_size, n_class * self.seq_size).to(self.device))        
     
     def init_hidden(self, batch_size):
         # even with batch_first = True this remains same as docs
@@ -64,8 +66,8 @@ class LSTM(torch.nn.Module):
         
         x = lstm_out.contiguous().view(batch_size,-1)
         
-        if self.training:
-            x = self.dropout(x)
+        # if self.training:
+        #     x = self.dropout(x)
         
         feat = self.linear(x)
         

@@ -63,7 +63,7 @@ class CBLoss(nn.Module):
 
     def forward(self, logits, labels):
         labels_one_hot = F.one_hot(labels, self.no_of_classes).float()
-        weights = torch.tensor(self.weights).float()
+        weights = self.weights.clone().float()
         weights = weights.unsqueeze(0)
         weights = weights.repeat(labels_one_hot.shape[0],1) * labels_one_hot
         weights = weights.sum(1)

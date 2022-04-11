@@ -163,7 +163,7 @@ def parse_opts():
     parser.add_argument('--data_type',
         #     default=['vd', 'ski'],
             default=['ski'],
-            type=list,
+            nargs='+',
             help='kinematic(ki), video(vd), other modality')
 
     parser.add_argument('--task',

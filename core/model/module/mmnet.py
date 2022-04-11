@@ -44,8 +44,8 @@ class MMNet(nn.Module):
                 
                 model.load_state_dict(states['model'])
                 
-            for p in model.parameters():
-                p.requires_grad = False
+                for p in model.parameters():
+                    p.requires_grad = False
                 
             backbones[modality] = model.to(self.device)
         

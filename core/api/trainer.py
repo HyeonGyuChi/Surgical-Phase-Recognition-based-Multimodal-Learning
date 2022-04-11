@@ -31,7 +31,6 @@ class Trainer():
         with open(self.args.save_path + '/params.json', 'w') as f:
             json.dump(param_dict, f, indent=4)
 
-
         # Load dataset
         print('======= Load Dataset =======')
         self.train_loader, self.val_loader = get_dataset(self.args)
@@ -57,15 +56,12 @@ class Trainer():
         self.optimizer, self.scheduler = configure_optimizer(self.args, self.model)
     
         # Set device type [cpu or cuda]
-        self.model = self.model.to(self.args.device)
-        
+        self.model = self.model.to(self.args.device)           
+
         # Set multi-gpu
         if self.args.num_gpus > 1:
             print('======= Set Multi-GPU =======')
-            self.model = nn.DataParallel(self.model)
-            # self.model = nn.DataParallel(self.model, 
-            #                             device_ids=list(range(args['model']['params']['n_gpus'])))
-            
+            self.model = nn.DataParallel(self.model) 
             
         # Load pre-trained model
         if self.args.restore_path is not None:
@@ -96,7 +92,16 @@ class Trainer():
             if i+1 != len(self.args.data_type):
                 dtype_list += '-'
 
-        self.args.save_path += '{}]'.format(dtype_list)
+        self.args.save_path += '{}]-1'.format(dtype_list)
+
+        if os.path.exists(self.args.save_path):
+            for idx in range(2, 99):
+                tmp_save_path = self.args.save_path[:-2] + '-{}'.format(idx)
+                
+                if not os.path.exists(tmp_save_path):
+                    self.args.save_path = tmp_save_path
+                    break
+
         os.makedirs(self.args.save_path, exist_ok=True)
 
     def set_class_weight(self):
@@ -160,7 +165,7 @@ class Trainer():
             
             # validation phase
             self.valid()
-        
+
     def train(self):
         self.model.train()
         
@@ -266,8 +271,6 @@ class Trainer():
         for fname in os.listdir(self.args.save_path):
             if fname[-3:] == 'pth':
                 saved_pt_list.append(self.args.save_path + '/{}'.format(fname))
-
-        print(saved_pt_list)
 
         # top N개 빼고 삭제
         if len(saved_pt_list) > self.args.save_top_n:

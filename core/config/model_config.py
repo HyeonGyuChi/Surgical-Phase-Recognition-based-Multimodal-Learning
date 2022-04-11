@@ -66,10 +66,11 @@ def add_multi_args(parser):
                         'model': 'lstm',
                         # 'input_size': 28,
                         # 'restore_path': 'logs/lstm-cb-loss/epoch:44-val_loss:8.2361.pth',
-                        'input_size': 4,
+                        'input_size': 11,
                         # 'restore_path': 'logs/lstm-cb-loss-ski/epoch:49-val_loss:9.3289.pth',
                         # 'restore_path': 'logs/lstm-cb-loss-ski_swin/epoch:24-val_loss:9.4483.pth',
-                        'restore_path': 'logs/lstm-cb-loss-ski_ocr/epoch:27-val_loss:9.4528.pth',
+                        # 'restore_path': 'logs/lstm-cb-loss-ski_ocr/epoch:27-val_loss:9.4528.pth',
+                        'restore_path': 'logs/lstm-cb_loss-petraw-all-dtype[ski]-12/epoch:40-val_loss:9.4232.pth',
                         'feature_size': 256,
                     },
                     # other modality
