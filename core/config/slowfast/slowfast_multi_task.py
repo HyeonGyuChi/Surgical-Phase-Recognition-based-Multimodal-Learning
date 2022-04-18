@@ -47,7 +47,8 @@ ann_file_train = f'/raid/datasets/public/PETRAW/mmaction/petraw_{name}_train_spl
 ann_file_val = f'/raid/datasets/public/PETRAW/mmaction/petraw_{name}_val_split_{split}_rawframes.txt'
 ann_file_test = f'/raid/datasets/public/PETRAW/mmaction/petraw_{name}_val_split_{split}_rawframes.txt'
 img_norm_cfg = dict(
-    mean=[117.1168392375, 75.27494787, 67.37629650299999], std=[60.241352387999996, 51.261253263, 49.192591569], to_bgr=False)
+    mean=[117.1168392375, 75.27494787, 67.37629650299999], 
+    std=[60.241352387999996, 51.261253263, 49.192591569], to_bgr=False)
 
 train_pipeline = [
     dict(type='SampleFrames', clip_len=8, frame_interval=1, num_clips=1),

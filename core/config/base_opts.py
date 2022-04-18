@@ -9,7 +9,7 @@ def parse_opts():
     # --------------- Model basic info --------------------
     parser.add_argument('--model',
         #     default='mobilenetv3_large_100',
-            default='resnet18',
+            default='slowfast',
             type=str,
             help='Select model to train/test')
     
@@ -28,7 +28,7 @@ def parse_opts():
             help='Select loss_fn to train/test')
     
     parser.add_argument('--input_size',
-            default=14,
+            default=224,
             type=int,
             help='input sample size')
 
@@ -150,24 +150,23 @@ def parse_opts():
 
     # -------------- Dataset --------------------
     parser.add_argument('--dataset', 
-            default='mnist', 
+            default='petraw', 
             type=str, 
             choices=['mnist', 'jigsaws', 'misaw', 'petraw'], 
             help='choose a multimodal dataset')
 
     parser.add_argument('--data_base_path',
-            default='/dataset3/multimodal',
+            default='/raid/multimodal',
             type=str,
             help='Data location')
 
     parser.add_argument('--data_type',
-        #     default=['vd', 'ski'],
-            default=['ski'],
+            default=['vd'],
             nargs='+',
             help='kinematic(ki), video(vd), other modality')
 
     parser.add_argument('--task',
-            default='SU',
+            default='all',
             type=str,
             help='Data location')
 
@@ -200,7 +199,12 @@ def parse_opts():
                     't_resize': [256],
                     't_random_crop': [224, True],
                     't_to_tensor': [],
-                    't_normalize': [0.5,0.5],
+                #     't_normalize': [0.5,0.5, False],
+                    't_normalize': [
+                        [0.4592817225, 0.295195874, 0.2642207706],
+                        [0.2362405976, 0.2010245226, 0.1929121238],
+                        False,
+                    ]
                     },
             type=dict,
             help='How many CPUs to use for data loading')
@@ -209,7 +213,12 @@ def parse_opts():
             default={
                     't_resize': [256],
                     't_to_tensor': [],
-                    't_normalize': [0.5,0.5],
+                    # 't_normalize': [0.5,0.5],
+                    't_normalize': [
+                        [0.4592817225, 0.295195874, 0.2642207706],
+                        [0.2362405976, 0.2010245226, 0.1929121238],
+                        False,
+                    ]
                     },
             type=dict,
             help='How many CPUs to use for data loading')
@@ -219,7 +228,12 @@ def parse_opts():
                     't_resize': [256],
                     't_center_crop': [224],
                     't_to_tensor': [],
-                    't_normalize': [0.5,0.5],
+                #     't_normalize': [0.5,0.5],
+                    't_normalize': [
+                        [0.4592817225, 0.295195874, 0.2642207706],
+                        [0.2362405976, 0.2010245226, 0.1929121238],
+                        False,
+                    ]
                     },
             type=dict,
             help='How many CPUs to use for data loading')    

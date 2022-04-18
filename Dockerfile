@@ -18,7 +18,9 @@ RUN apt-get update && apt-get install -y git ninja-build libglib2.0-0 libsm6 lib
  && rm -rf /var/lib/apt/lists/*
 
 RUN apt-get update -y && apt-get install -y libgl1-mesa-glx
-RUN pip install natsort pycm einops matplotlib opencv-python scipy cityscapesscripts prettytable webcolors
+RUN pip install natsort pycm einops matplotlib opencv-python pandas \
+        scipy cityscapesscripts prettytable webcolors torch_optimizer timm \
+        scikit-learn tqdm
 
 
 RUN conda clean --all

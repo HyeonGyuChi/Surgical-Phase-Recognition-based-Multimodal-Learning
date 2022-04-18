@@ -2,7 +2,7 @@
 
 cd '../accessory/mmsegmentation/tools'
 
-CONFIG='../../../core/config/upernet_swin.py'
+CONFIG='../../../core/config/swin/upernet_swin.py'
 # N_GPUS=4
 # GPUS='4,5,6,7'
 # PORT=29531

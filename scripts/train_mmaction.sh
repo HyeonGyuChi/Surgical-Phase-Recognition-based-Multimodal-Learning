@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 cd '../accessory/mmaction2/tools'
 
-CONFIG='../../../core/config/slowfast_multi_task.py'
+CONFIG='../../../core/config/slowfast/slowfast_multi_task.py'
 
 N_GPUS=1
 GPUS='7'

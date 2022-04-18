@@ -45,7 +45,9 @@ class Trainer():
             self.model = get_model(self.args)
         
         # multi-task classifier setup
-        self.model.set_classifiers(self.n_class_list)
+        if hasattr(self.model, 'set_classifiers'):
+            self.model.set_classifiers(self.n_class_list)
+
         self.args.n_class_list = self.n_class_list
         
         # Load loss function
@@ -230,6 +232,7 @@ class Trainer():
             y_hat, fuse_loss = self.model(x)
             
             loss = self.calc_loss(y_hat, y)
+            
             if fuse_loss is not None:
                 loss += torch.mean(fuse_loss)
         else:

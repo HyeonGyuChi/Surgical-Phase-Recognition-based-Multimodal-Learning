@@ -76,7 +76,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
                 X = self.aug(X)
                 
                 X = torch.stack([torch.Tensor(_X) for _X in X], dim=0)                
-                X = X.permute(1, 0, 2, 3)
+                X = X.permute(1, 0, 2, 3).unsqueeze(0)
 
                 data[dtype] = X
             elif dtype == 'mask':
