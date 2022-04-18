@@ -15,6 +15,7 @@ name_to_aug = {
     # 't_random_hrz_flip': TemporalRandomHorizontalFlip,
     # 'color_jitter': transforms.ColorJitter,
     't_s_resize': TemporalSegResize,
+    't_flip': TemporalFlip,
     'to_tensor': ToTensor,
     'normalize': Normalize,
 }

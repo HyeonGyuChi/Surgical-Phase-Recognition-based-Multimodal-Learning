@@ -136,6 +136,31 @@ class TemporalCenterCrop(object):
 
         return img_list 
 
+
+class TemporalFlip(object):
+    def __init__(self, prob, axis='hor'):
+        self.prob = prob
+        self.axis = axis
+
+    def __call__(self, img_list):
+        if np.random.random() >= self.prob:
+            _img_list = []
+
+            for img in img_list:
+                if self.axis == 'hor':
+                    img = torch.flip(img, [-1])
+
+                elif self.axis == 'ver':
+                    img = torch.flip(img, [-2])
+
+                _img_list.append(img)
+
+        else:
+            _img_list = img_list
+
+        return _img_list
+
+
 class TemporalToTensor(object):
     def __init__(self):
         self.test = None

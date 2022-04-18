@@ -198,6 +198,7 @@ def parse_opts():
             default={
                     't_resize': [256],
                     't_random_crop': [224, True],
+                    't_flip': [0.5, 'hor'],
                     't_to_tensor': [],
                 #     't_normalize': [0.5,0.5, False],
                     't_normalize': [
