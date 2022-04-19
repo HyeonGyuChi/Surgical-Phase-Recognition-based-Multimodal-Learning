@@ -113,15 +113,15 @@ class PETRAWDataset(torch.utils.data.Dataset):
         f_len = len(file_list)
         split = f_len // 5
         
-        st = 0 + (val_index-1) * split
+        st = 0 + (val_index-1) * split # fold1=[0:29] // 29ea => 1~29 case
         ed = 0 + val_index * split
-        if val_index == 5:
+        if val_index == 5: # fold5=[116:149] // 33ea
             ed = f_len
         
         if self.state == 'train':
             for target in range(f_len):
                 if not (st <= target and target < ed):
-                    self.target_list.append(file_list[target][:-4])
+                    self.target_list.append(file_list[target][:-4]) # split [.jpg, .png]
         else:
             for target in range(f_len):
                 if (st <= target and target < ed):
@@ -175,34 +175,32 @@ class PETRAWDataset(torch.utils.data.Dataset):
         seq_size = self.args.clip_size
         
         if go_subsample:
-            for key, _data in self.data_dict.items():
+            for key, _data in self.data_dict.items(): # 'video', 'mask', 'kinematic'
                 for dir_name in _data.keys():
-                    self.data_dict[key][dir_name] = _data[dir_name][::sample_rate]
+                    self.data_dict[key][dir_name] = _data[dir_name][::sample_rate] # default = 6 == 5fps
 
             for dir_name in self.labels.keys():
                 self.labels[dir_name] = self.labels[dir_name][::sample_rate]
 
-
-
         # overlapping data sequence
-        if self.state != 'train':
+        if self.state != 'train': # val
             stride = int(seq_size)
-        else:
+        else: # train
             stride = int(seq_size * self.args.overlap_ratio)
-
-        for key, _data in self.data_dict.items():
+        
+        for key, _data in self.data_dict.items(): # 'video', 'mask', 'kinematic'
             seq_data = []
             
-            for dir_name in _data.keys():
+            for dir_name in _data.keys(): # '033', '045', ...
                 d_len = len(_data[dir_name])
                 
                 for st in range(0, d_len, stride):
                     if st+seq_size < d_len:
-                        seq_data.append(_data[dir_name][st:st+seq_size])
+                        seq_data.append(_data[dir_name][st:st+seq_size]) # clips
                     else:
                         break
-                    
-            self.data_dict[key] = array(seq_data)
+
+            self.data_dict[key] = array(seq_data) # include all case clips
         
         seq_data = []
         
@@ -306,13 +304,12 @@ class PETRAWDataset(torch.utils.data.Dataset):
             if key_val in self.target_list:
                 with open(fpath, 'rb') as f:
                     data = pickle.load(f)
-                    
+
                 # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:4])
                 # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:8])
                 # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :8]), data[:, 8:10]), 1)
-                self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :8]), data[:, 8:]), 1)
+                self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :8]), data[:, 8:]), 1) # 요기서 load
                 # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :4]), data[:, 8:]), 1)
-                
 
     def load_labels(self):
         """
@@ -336,7 +333,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         self.class_weights = []
         self.class_cnt = []
         
-        for n_classes in [3, 13, 7, 7]:
+        for n_classes in [3, 13, 7, 7]: # phase, step, left action, right action
             self.class_cnt.append(np.zeros(n_classes))
             self.class_weights.append(np.zeros(n_classes))
 
@@ -345,7 +342,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
             
             if key_val in self.target_list:
                 df = pd.read_csv(fpath, sep='\t')
-                tmp_labels = df.values[:, 1:]
+                tmp_labels = df.values[:, 1:] # numpy, shape(:, 4) // Phase, step, verb_l, verb_r
                 
                 if self.task == 'phase':
                     labels = np.zeros((len(tmp_labels)))
@@ -383,7 +380,8 @@ class PETRAWDataset(torch.utils.data.Dataset):
                 self.labels[key_val] = labels
 
         # class weight computation
-        for idx in range(4):
+        for idx in range(4): # phase, step, verb l, verb r
+            
             if len(self.class_cnt[idx]):
                 bot_sum = 0
                 n_classes = len(self.class_cnt[idx])
@@ -391,20 +389,22 @@ class PETRAWDataset(torch.utils.data.Dataset):
                 for idx2 in range(n_classes):
                     bot_sum += self.class_cnt[idx][idx2]
 
-                    if idx >= 2:
-                        print(idx2, self.class_cnt[idx][idx2])
+                    if idx >= 2: # verb l, verb r
+                        # print(idx2, self.class_cnt[idx][idx2])
+                        pass
                     
                 for idx2 in range(n_classes):
-                    self.class_weights[idx][idx2] = bot_sum / (n_classes * self.class_cnt[idx][idx2])
+                    self.class_weights[idx][idx2] = bot_sum / (n_classes * self.class_cnt[idx][idx2]) # more cnt to less weight
                 
-                if idx < 2:
+                if idx < 2: # pahse, action
                     self.class_weights[idx] = torch.Tensor(np.ones(len(self.class_cnt[idx]))).cuda()
-                else:
+                else: # verb l, verb r
                     self.class_weights[idx] = torch.Tensor(self.class_cnt[idx]).cuda()
 
             print('CLS WEIGHTS - ', idx, ' : ',  self.class_cnt[idx], self.class_weights[idx])
 
     def standardization(self, x):
+        
         mean_x = np.mean(x, 0)
         std_x = np.std(x, 0)
 
