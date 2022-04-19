@@ -56,11 +56,14 @@ def add_multi_args(parser):
     parser.add_argument('--model_params',
             default={
                     'video': {
-                        'model': 'resnet3d',
+                        # 'model': 'resnet3d',
+                        'model': 'slowfast',
                         'input_size': 224,
-                        'feature_size': 512,
+                        # 'feature_size': 512,
+                        'feature_size': 2304,
                         # 'restore_path': None,
-                        'restore_path': 'logs/resnet3d-cb-loss/epoch:49-val_loss:7.8618.pth',
+                        # 'restore_path': 'logs/resnet3d-cb-loss/epoch:49-val_loss:7.8618.pth',
+                        'restore_path': '/raid/results/phase_recognition/mmaction/petraw/multi_task/slowfast_r50_e50_clip8_split1/latest.pth',
                     },
                     'kinematic': {
                         'model': 'lstm',
@@ -70,7 +73,8 @@ def add_multi_args(parser):
                         # 'restore_path': 'logs/lstm-cb-loss-ski/epoch:49-val_loss:9.3289.pth',
                         # 'restore_path': 'logs/lstm-cb-loss-ski_swin/epoch:24-val_loss:9.4483.pth',
                         # 'restore_path': 'logs/lstm-cb-loss-ski_ocr/epoch:27-val_loss:9.4528.pth',
-                        'restore_path': 'logs/lstm-cb_loss-petraw-all-dtype[ski]-12/epoch:40-val_loss:9.4232.pth',
+                        # 'restore_path': 'logs/lstm-cb_loss-petraw-all-dtype[ski]-12/epoch:40-val_loss:9.4232.pth',
+                        'restore_path': None,
                         'feature_size': 256,
                     },
                     # other modality

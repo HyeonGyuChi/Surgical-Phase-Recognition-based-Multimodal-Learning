@@ -76,7 +76,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
                 X = self.aug(X)
                 
                 X = torch.stack([torch.Tensor(_X) for _X in X], dim=0)                
-                X = X.permute(1, 0, 2, 3)
+                X = X.permute(1, 0, 2, 3).unsqueeze(0)
 
                 data[dtype] = X
             elif dtype == 'mask':
@@ -165,7 +165,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
 
         # data subsampling and others
         print('[+] Preprocessing data .....')
-        self.preprocessing()
+        self.preprocessing2()
         print('[-] Preprocessing data ..... done')
 
     def preprocessing(self):
@@ -218,7 +218,82 @@ class PETRAWDataset(torch.utils.data.Dataset):
                     break
 
         self.labels = array(seq_data)
+    
+    def preprocessing2(self):
+        # subsample
+        sample_rate = self.args.subsample_ratio
+        go_subsample = sample_rate > 1 
+        seq_size = self.args.clip_size
         
+        if go_subsample:
+            for key, _data in self.data_dict.items():
+                for dir_name in _data.keys():
+                    self.data_dict[key][dir_name] = _data[dir_name][::sample_rate]
+
+            for dir_name in self.labels.keys():
+                self.labels[dir_name] = self.labels[dir_name][::sample_rate]
+
+        # overlapping data sequence
+        # if self.state != 'train':
+        #     stride = int(seq_size)
+        # else:
+        #     stride = int(seq_size * self.args.overlap_ratio)
+        stride = 1
+
+        hf_seq = self.args.clip_size // 2
+
+        for key, _data in self.data_dict.items():
+            seq_data = []
+            
+            for dir_name in _data.keys():
+                d_len = len(_data[dir_name])
+                
+                for st in range(0, d_len, stride):
+                    if st-hf_seq < 0:
+                        diff = hf_seq-st
+
+                        if key == 'video':
+                            seq = [_data[dir_name][0] for _ in range(diff)] + _data[dir_name][st:st+(self.args.clip_size-diff)]
+
+                            # print(seq)
+                        else:
+                            pad = np.zeros((diff, *_data[dir_name][0].shape))
+
+                            seq = np.concatenate((pad, _data[dir_name][st:st+(self.args.clip_size-diff)]), 0)
+                        seq_data.append(seq)
+
+                    elif st+hf_seq >= d_len:
+                        diff = st+hf_seq-d_len
+
+                        if key == 'video':
+                            seq = _data[dir_name][st-hf_seq:] + [_data[dir_name][-1] for _ in range(diff)]
+                        else:
+                            pad = np.zeros((diff, *_data[dir_name][-1].shape))
+
+                            seq = np.concatenate((_data[dir_name][st-hf_seq:], pad), 0)
+                        seq_data.append(seq)
+
+                    else:
+                        seq_data.append(_data[dir_name][st-hf_seq:st+hf_seq])
+
+                    # if seq_data[-1].shape[0] != 8:
+                        # print(dir_name, st, seq_data[-1].shape)
+                    if len(seq_data[-1]) != 8:
+                        print(dir_name, st, len(seq_data[-1]))
+
+            self.data_dict[key] = array(seq_data)
+
+        seq_data = []
+        
+        for d_num in self.labels.keys():
+            data = self.labels[d_num]
+            d_len = len(data)
+
+            for st in range(0, d_len, stride):
+                seq_data.append(data[st:st+1])
+
+        self.labels = array(seq_data)
+
     def load_video(self):
         """
             1920 x 1080 (30Hz)
@@ -294,7 +369,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
         self.data_dict['kinematic'] = {}
 
-        target_path = self.data_path + '/Seg_kine6'
+        target_path = self.data_path + '/Seg_kine7'
         file_list = glob(target_path + '/*.pkl')
         file_list = natsort.natsorted(file_list)
 

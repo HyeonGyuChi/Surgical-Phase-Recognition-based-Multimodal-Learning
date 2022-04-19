@@ -37,6 +37,7 @@ class Trainer():
         self.set_class_weight()
         
         # Load model
+        # Set device type [cpu or cuda]
         print('======= Load Model =======')
         if self.args.model == 'multi':
             self.model = get_fusion_model(self.args)
@@ -44,7 +45,9 @@ class Trainer():
             self.model = get_model(self.args)
         
         # multi-task classifier setup
-        self.model.set_classifiers(self.n_class_list)
+        if hasattr(self.model, 'set_classifiers'):
+            self.model.set_classifiers(self.n_class_list)
+
         self.args.n_class_list = self.n_class_list
         
         # Load loss function
@@ -55,13 +58,13 @@ class Trainer():
         print('======= Load Optimizers =======')
         self.optimizer, self.scheduler = configure_optimizer(self.args, self.model)
     
-        # Set device type [cpu or cuda]
-        self.model = self.model.to(self.args.device)           
-
         # Set multi-gpu
         if self.args.num_gpus > 1:
             print('======= Set Multi-GPU =======')
-            self.model = nn.DataParallel(self.model) 
+            self.model = nn.DataParallel(self.model, 
+                                        device_ids=list(range(self.args.num_gpus))).cuda()
+        else:
+            self.model.to(self.args.device)
             
         # Load pre-trained model
         if self.args.restore_path is not None:
@@ -229,6 +232,7 @@ class Trainer():
             y_hat, fuse_loss = self.model(x)
             
             loss = self.calc_loss(y_hat, y)
+            
             if fuse_loss is not None:
                 loss += torch.mean(fuse_loss)
         else:
@@ -246,14 +250,16 @@ class Trainer():
 
         if 'ce' in self.args.loss_fn:
             for ti in range(len(self.n_class_list)):
-                for seq in range(y.shape[1]):
-                    loss += self.loss_fn(y_hat[ti][:, seq, ], y[:, seq, ti])
+                # for seq in range(y.shape[1]):
+                    # loss += self.loss_fn(y_hat[ti][:, seq, ], y[:, seq, ti])
+                loss += self.loss_fn(y_hat[ti][:, ], y[:, 0, ti])
                 loss_div_cnt += 1
 
         else: # cb, bs, eqlv2
             for ti in range(len(self.n_class_list)):
-                for seq in range(y.shape[1]):
-                    loss += self.loss_fn[ti](y_hat[ti][:, seq, :], y[:, seq, ti])
+                # for seq in range(y.shape[1]):
+                    # loss += self.loss_fn[ti](y_hat[ti][:, seq, :], y[:, seq, ti])
+                loss += self.loss_fn[ti](y_hat[ti][:, :], y[:, 0, ti])
                 loss_div_cnt += 1
                     
             if self.args.use_normsoftmax:
@@ -261,7 +267,7 @@ class Trainer():
                     loss += self.loss_fn[ti+4](y_hat[4], y[:, :, ti])   
                 loss_div_cnt += 1
             
-        loss /= loss_div_cnt
+        # loss /= loss_div_cnt
             
         return loss
     

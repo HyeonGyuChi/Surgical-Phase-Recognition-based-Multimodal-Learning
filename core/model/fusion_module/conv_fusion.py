@@ -125,11 +125,12 @@ class ConvFusion(nn.Module):
 
                 self.to_cls_emb = torch.nn.Linear(self.f_emb_sz * 2, self.f_emb_sz)
 
-    def set_classifiers(self, n_class_list, device):
-        self.device = device
-
+    def set_classifiers(self, n_class_list):
         for n_class in n_class_list:
-            self.classifiers.append(torch.nn.Linear(self.f_emb_sz, n_class * self.seq_size).to(self.device))
+            self.classifiers.append(torch.nn.Linear(self.f_emb_sz, n_class))
+            # self.classifiers.append(torch.nn.Linear(self.f_emb_sz, n_class * self.seq_size).to(self.device))
+        
+        self.classifiers = torch.nn.ModuleList(self.classifiers)
 
 
     def forward(self, features):
@@ -178,7 +179,8 @@ class ConvFusion(nn.Module):
         
         for ci in range(len(self.classifiers)):
             x = self.classifiers[ci](z2)
-            x = x.view(z2.size(0), self.seq_size, -1)
+            # x = x.view(z2.size(0), self.seq_size, -1)
+            x = x.view(z2.size(0), -1)
 
             out = self.Softmax(x)
             outputs.append(out)

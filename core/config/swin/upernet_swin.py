@@ -98,7 +98,7 @@ test_pipeline = [
 ]
 data = dict(
     samples_per_gpu=16,
-    workers_per_gpu=6,
+    workers_per_gpu=6*3,
     train=dict(
         type=dataset_type,
         data_root=data_root,
@@ -116,7 +116,7 @@ data = dict(
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='test/img1',
+        img_dir='test2/img_6',
         # ann_dir='test/seg',
         # split='split_val.txt',
         pipeline=test_pipeline))

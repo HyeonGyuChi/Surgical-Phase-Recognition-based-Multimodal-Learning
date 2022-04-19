@@ -140,7 +140,9 @@ class ResNet(nn.Module):
 
     def set_classifiers(self, n_class_list):
         for n_class in n_class_list:
-            self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class * self.seq_size).to(self.device))
+            self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class).to(self.device))
+            # self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class).cuda())
+            # self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class * self.seq_size).to(self.device))
             
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
@@ -191,7 +193,7 @@ class ResNet(nn.Module):
         x = x[key]
 
         x = self.conv1(x)
-        x = self.bn1(x)
+        x = self.bn1(x)     
         x = self.relu(x)
         if not self.no_max_pool:
             x = self.maxpool(x)
@@ -214,7 +216,7 @@ class ResNet(nn.Module):
         
         for ci in range(len(self.classifiers)):
             x = self.classifiers[ci](feat)
-            x = x.view(feat.size(0), self.seq_size, -1)
+            # x = x.view(feat.size(0), self.seq_size, -1)
 
             out = self.Softmax(x)
             outputs.append(out)

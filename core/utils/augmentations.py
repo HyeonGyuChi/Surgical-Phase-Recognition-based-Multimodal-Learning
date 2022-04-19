@@ -136,6 +136,31 @@ class TemporalCenterCrop(object):
 
         return img_list 
 
+
+class TemporalFlip(object):
+    def __init__(self, prob, axis='hor'):
+        self.prob = prob
+        self.axis = axis
+
+    def __call__(self, img_list):
+        if np.random.random() >= self.prob:
+            _img_list = []
+
+            for img in img_list:
+                if self.axis == 'hor':
+                    img = torch.flip(img, [-1])
+
+                elif self.axis == 'ver':
+                    img = torch.flip(img, [-2])
+
+                _img_list.append(img)
+
+        else:
+            _img_list = img_list
+
+        return _img_list
+
+
 class TemporalToTensor(object):
     def __init__(self):
         self.test = None
@@ -145,24 +170,36 @@ class TemporalToTensor(object):
         
 
 class TemporalNormalize(object):
-    def __init__(self, mean, std):
+    def __init__(self, mean, std, is_rgb):
         self.mean = mean
         self.std = std
+        self.is_rgb = is_rgb
 
     def __call__(self, img_list):
         if isinstance(self.mean, list):
             tmp = []
+
             for img in img_list:
-                # print(img.shape)
-                img[:, :, 0] = (img[:, :, 0] - self.mean[-1]) / self.std[-1]
-                img[:, :, 1] = (img[:, :, 1] - self.mean[1]) / self.std[1]
-                img[:, :, 2] = (img[:, :, 2] - self.mean[0]) / self.std[0]
+                if self.is_rgb:
+                    img = torch.flip(img, [0])
+                    
+                for i in range(3):
+                    img[i, :, :] = (img[i, :, :] - self.mean[i]) / self.std[i]
 
                 tmp.append(img)
             
             return tmp
         else:
-            return [(img - self.mean) / self.std for img in img_list]
+            if self.is_rgb:
+                _img_list = []
+
+                for img in img_list:
+                    img = torch.flip(img, [0])
+                    _img_list.append((img-self.mean) / self.std)
+
+                return _img_list
+            else:
+                return [(img - self.mean) / self.std for img in img_list]
 
 
 ##################################################################

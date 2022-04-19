@@ -42,7 +42,10 @@ class MMNet(nn.Module):
             if copy_args.restore_path is not None:
                 states = torch.load(copy_args.restore_path)
                 
-                model.load_state_dict(states['model'])
+                if 'state_dict' in states:
+                    model.load_state_dict(states['state_dict'])
+                else:
+                    model.load_state_dict(states['model'])
                 
                 for p in model.parameters():
                     p.requires_grad = False
@@ -56,7 +59,7 @@ class MMNet(nn.Module):
             self.fusion_module = ConvFusion(self.args, self.n_modality, self.modality_size_list)
             
     def set_classifiers(self, n_class_list):
-        self.fusion_module.set_classifiers(n_class_list, self.device)
+        self.fusion_module.set_classifiers(n_class_list)
         
     def forward(self, x):
         # torch.Size([8, 8, 14]) torch.Size([8, 3, 8, 224, 224])
