@@ -34,7 +34,15 @@ model = dict(
         spatial_type='avg',
         dropout_ratio=0.5,
         multi_task=True,
-        loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
+        # loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
+        loss_cls=dict(type='CBLoss', loss_weight=1.0, 
+            samples_per_cls=[
+                [1] * 3,
+                [1] * 13,
+                [154292, 26405, 6034, 15333, 76558, 10274, 1648],
+                [159187, 22992, 4743, 14319, 76749, 10913, 1641],
+            ],
+            no_of_classes=[3, 13, 7, 7])),
     train_cfg = None,
     test_cfg = dict(average_clips='prob'))
 
@@ -51,7 +59,7 @@ img_norm_cfg = dict(
     std=[60.241352387999996, 51.261253263, 49.192591569], to_bgr=False)
 
 train_pipeline = [
-    dict(type='SampleFrames', clip_len=8, frame_interval=1, num_clips=1),
+    dict(type='SampleFrames', clip_len=8, frame_interval=5, num_clips=1),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='RandomResizedCrop'),
@@ -66,7 +74,7 @@ val_pipeline = [
     dict(
         type='SampleFrames',
         clip_len=8,
-        frame_interval=1,
+        frame_interval=5,
         num_clips=1,
         test_mode=True),
     dict(type='RawFrameDecode'),
@@ -82,8 +90,8 @@ test_pipeline = [
     dict(
         type='SampleFrames',
         clip_len=8,
-        frame_interval=1,
-        num_clips=10,
+        frame_interval=5,
+        num_clips=1,
         test_mode=True),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
@@ -95,7 +103,7 @@ test_pipeline = [
     dict(type='ToTensor', keys=['imgs'])
 ]
 data = dict(
-    videos_per_gpu=2,
+    videos_per_gpu=64,
     workers_per_gpu=6,
     train=dict(
         type=dataset_type,
@@ -144,7 +152,7 @@ log_config = dict(
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 # work_dir = f'/raid/results/phase_recognition/mmaction/petraw/{name}/test'
-work_dir = '/code/multimodal/logs/multi_task_test'
+work_dir = '/code/multimodal/logs/multi_task_test5'
 # load_from = 'https://download.openmmlab.com/mmaction/recognition/slowfast/slowfast_r152_4x16x1_256e_kinetics400_rgb/slowfast_r152_4x16x1_256e_kinetics400_rgb_20210122-bdeb6b87.pth'
 # load_from = '/raid/pretrained_models/mmaction2/slowfast_r50_256p_8x8x1_256e_kinetics400_rgb_20200810-863812c2.pth'
 

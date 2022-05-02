@@ -70,13 +70,17 @@ class Trainer():
         if self.args.restore_path is not None:
             print('======= Load Pretrained Model =======')
             
-            states = torch.load(self.args.restore_path)           
-            self.model.load_state_dict(states['model'])
-            
-            if self.args.resume:
-                self.optimizer.load_state_dict(states['optimizer'])
-                self.scheduler.load_state_dict(states['scheduler'])
-                self.current_epoch = states['epoch']
+            states = torch.load(self.args.restore_path)
+
+            if 'state_dict' in states:
+                self.model.load_state_dict(states['state_dict'])
+            else:     
+                self.model.load_state_dict(states['model'])
+                
+                if self.args.resume:
+                    self.optimizer.load_state_dict(states['optimizer'])
+                    self.scheduler.load_state_dict(states['scheduler'])
+                    self.current_epoch = states['epoch']
         
         print('======= Set Metric Helper =======')
         self.metric_helper = MetricHelper(self.args)
@@ -235,6 +239,10 @@ class Trainer():
             
             if fuse_loss is not None:
                 loss += torch.mean(fuse_loss)
+        elif self.args.model == 'slowfast':
+            y_hat = self.model.forward(x['video'], return_loss=True, infer_3d=True)
+
+            loss = self.calc_loss(y_hat, y)
         else:
             y_hat = self.model(x)
         
@@ -289,7 +297,7 @@ class Trainer():
         if self.args.num_gpus > 1:
             ckpt_state = {
                 'model': self.model.module.state_dict(),
-                'optimizer': self.optimizer.module.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
                 'scheduler': self.scheduler.state_dict(),
                 'epoch': self.current_epoch,
             }

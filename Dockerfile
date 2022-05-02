@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y git ninja-build libglib2.0-0 libsm6 lib
 RUN apt-get update -y && apt-get install -y libgl1-mesa-glx
 RUN pip install natsort pycm einops matplotlib opencv-python pandas \
         scipy cityscapesscripts prettytable webcolors torch_optimizer timm \
-        scikit-learn tqdm
+        scikit-learn tqdm warmup_scheduler
 
 
 RUN conda clean --all
