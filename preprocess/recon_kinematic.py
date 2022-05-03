@@ -16,7 +16,6 @@ class recon_kinematic():
         self.save_path = save_path
 
         # hyper config
-        self.EXCEPTION_NUM = -100
         self.dsize = dsize # w, h
 
         # bbox dataloader setup
@@ -32,14 +31,24 @@ class recon_kinematic():
         columns = [] # in recon_df
         entities_start_ids = {}
         
-        combinations_of_objs = list(combinations(extract_objs, 2)) # total obj pair
+        # combinations_of_objs = list(combinations(extract_objs, 2)) # total obj pair
 
         print('\n[+] \t load bbox data ... {}'.format(extract_objs))
         bbox_data = self.bbox_loader.load_data(extract_objs)
+    
+        # save data
+        '''
+        with open('/dataset3/multimodal/PETRAW/Training/Seg_kine8/bbox_data.pickle','wb') as fw:
+            pickle.dump(bbox_data, fw)
+
+        # load data
+        with open('/dataset3/multimodal/PETRAW/Training/Seg_kine8/bbox_data.pickle','rb') as fr:
+            bbox_data = pickle.load(fr)
+        '''
+
         obj_key, obj_to_color = get_bbox_obj_info(self.bbox_loader)
         print('[-] \t load bbox data ... {}'.format(extract_objs))
 
-        
         print('\n[+] \t arrange entity index ... {}'.format(extract_objs))
         entities_cnt = 0
         entities_np = []
@@ -62,22 +71,28 @@ class recon_kinematic():
         # list to np
         entities_np = np.hstack(entities_np)
         print('entities - {}'.format(entities_np.shape))
+
         print(entities_start_ids)
 
         # append recon df
         recon_df = pd.concat([recon_df, pd.DataFrame(entities_np)], axis=1) # column bind
         recon_df.columns = columns
+        
         print(recon_df)
         print('[-] \t arrange entity index ... {}'.format(extract_objs))
 
         # reconstruct
         print('\n[+] \t reconstruct ... {} => {}'.format(extract_objs, extract_pairs))
 
-        single_methods = [m for m in methods if m in ['centroid', 'eoa', 'speed']]
+        print('\n[+] \t single reconstruct ... {}'.format(extract_objs))
+
+        single_methods = [m for m in methods if m in ['centroid', 'eoa', 'pathlen', 'velocity']]
         pair_methods = [m for m in methods if m in ['IoU', 'gIoU']]
         
+        print('single method: ', single_methods)
+
         # recon single value
-        for method in single_methods: # ['centroid', 'eoa', 'speed', ..]
+        for method in single_methods: # ['centroid', 'eoa', 'pathlen', ..]
             for obj in extract_objs: # ['Grasper', 'Blocks', 'obj3', ..]
                 for i, start_idx in enumerate(entities_start_ids[obj]):
                     kine_results = []
@@ -86,27 +101,76 @@ class recon_kinematic():
                     
                     target_np = entities_np[:, start_idx: start_idx + len(entity_col)] # entitiy bbox info
                     
-                    # apply method frame by frame
-                    for f_idx in range(target_np.shape[0]):
-                        result = recon_method(target_np[f_idx, :])
-                        kine_results.append(result)
+                    # calc from single rows : apply method from frame by frame
+                    if method in ['centroid', 'eoa']:
+                        for f_idx in range(target_np.shape[0]):
+                            result = recon_method(target_np[f_idx, :])
+                            kine_results.append(result)
 
-                    kine_results = np.stack(kine_results) # list to np
+                        kine_results = np.stack(kine_results) # list to np
+                    
+                    # calc from multiple rows : apply method from all frame
+                    if method in ['pathlen']:
+                        kine_results = recon_method(target_np)
+
+                    if method in ['velocity']:
+                        kine_results = recon_method(target_np, interval_sec=1/30)
 
                     # append recon df
                     recon_df = pd.concat([recon_df, pd.DataFrame(kine_results)], axis=1) # column bind
                     columns += ['{}-{}'.format(target_entity, col) for col in recon_method_col]
                     recon_df.columns = columns
 
-            
         print(recon_df.shape)
-        print(recon_df.iloc[:, 20:24]) # centroid
-        print(recon_df.iloc[:, 30:32]) # eoa
+        print(recon_df.columns)
+        # print(recon_df.iloc[:, 20:24]) # centroid
+        # print(recon_df.iloc[:, 30:32]) # eoa
 
-        exit(0)
-        # TODO - recon pair value
+        print('\n[-] \t single reconstruct ... {}'.format(extract_objs))
+
+        print('\n[+] \t pair reconstruct ... {}'.format(extract_pairs))
+        print('pair methods: ', pair_methods)
+
+        # recon pair value
+        for method in pair_methods: # ['IoU', 'gIoU']
+            for src_obj, target_obj in extract_pairs: # ('Grasper', 'Grasper'), ('Grasper', 'Blocks') .. 
+                for i, src_start_idx in enumerate(entities_start_ids[src_obj]): # src per entiity
+                    for j, target_start_idx in enumerate(entities_start_ids[target_obj]): # target per entiity
+                        kine_results = []
+                        recon_method, recon_method_col = get_recon_method(method)
+                        
+                        src_entity = '{}_{}'.format(src_obj, i)
+                        target_entity = '{}_{}'.format(target_obj, j)
+                        
+                        src_np = entities_np[:, src_start_idx: src_start_idx + len(entity_col)] # entitiy bbox info
+                        target_np = entities_np[:, target_start_idx: target_start_idx + len(entity_col)] # entitiy bbox info
+                    
+                        # calc from single rows : apply method from frame by frame
+                        if method in ['IoU', 'gIoU']:
+                            for f_idx in range(src_np.shape[0]):
+                                result = recon_method(src_np[f_idx, :], target_np[f_idx, :]) # pair numpy input
+                                kine_results.append(result)
+                                
+                            kine_results = np.stack(kine_results) # list to np
+
+                        # append recon df
+                        recon_df = pd.concat([recon_df, pd.DataFrame(kine_results)], axis=1) # column bind
+                        columns += ['{}-{}-{}'.format(src_entity, target_entity, col) for col in recon_method_col]
+                        recon_df.columns = columns
+
+
         # TODO - save recon df
+        print(recon_df.shape)
+        print(recon_df.columns)
 
+        print('\n[-] \t pair reconstruct ... {}'.format(extract_pairs))
+        
+        print('\n[-] \t reconstruct ... {} => {}'.format(extract_objs, extract_pairs))
+
+        # ref: https://tariat.tistory.com/583
+        recon_df.to_pickle(os.path.splitext(self.save_path)[0] + '.pkl')
+        recon_df.to_csv(self.save_path)        
+        
         return recon_df
 
 if __name__ == "__main__":
@@ -121,16 +185,17 @@ if __name__ == "__main__":
     
     rk = recon_kinematic("", "")
 
-    methods = ['centroid', 'eoa']
+    methods = ['centroid', 'eoa', 'pathlen', 'velocity', 'IoU', 'gIoU']
 
-    extract_objs = ['Grasper', 'Blocks', 'obj3']
-    extract_pairs = ('Grasper', 'Blocks')
+    extract_objs = ['Grasper', 'Blocks']
+    extract_pairs = [('Grasper', 'Grasper'), ('Grasper', 'Blocks')]
     
     for key_val in file_list:
         target_path = target_root_path + '/{}'.format(key_val)
-        save_path = save_root_path + '/{}_seg_ki.pkl'.format(key_val)
-        rk.set_path(target_path, save_path)
-        rk.reconstruct(methods, extract_objs, extract_pairs)
+        # save_path = save_root_path + '/{}_seg_ki.pkl'.format(key_val)
+        save_path = save_root_path + '/{}_seg_ki.csv'.format(key_val)
 
-        exit(0)
+        os.makedirs(save_root_path, exist_ok=True)
+        rk.set_path(target_path, save_path)
+        recon_df = rk.reconstruct(methods, extract_objs, extract_pairs)
     
