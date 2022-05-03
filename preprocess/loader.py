@@ -35,7 +35,7 @@ class PETRAWBBOXLoader():
         bbox_data = {}
 
         frame_list = glob(self.root_dir + '/*')
-        frame_list = natsort.natsorted(frame_list)[:100]
+        frame_list = natsort.natsorted(frame_list)
 
         for fi, fpath in enumerate(tqdm(frame_list)):
             # extract bbox each tools
@@ -75,14 +75,17 @@ class PETRAWBBOXLoader():
             bbox_data[obj] = np.stack(bbox_data[obj])
         
         return bbox_data
-
+    
+    '''
     def _bbox_to_normalized_pixel(self, bbox, image_size):
         x_min, x_max, y_min, y_max = bbox[:] # VOC style
         img_w, img_h = image_size
+ 
+        bbox[:2] = normalized_pixel(bbox[:2], img_w) # x min max
+        bbox[2:] = normalized_pixel(bbox[2:], img_h) # y
         
-        x1, x2, y1, y2 = x_min/img_w, x_max/img_w, y_min/img_h, y_max/img_h
-        
-        return [x1, x2, y1, y2]
+        return bbox
+    '''
 
     def _get_bbox(self, new_img, objs):
         """
@@ -107,7 +110,7 @@ class PETRAWBBOXLoader():
                 if len(ids[0]) > 0: # exist // ids[0] - h, ids[1] - w
                     x_min, x_max, y_min, y_max = np.min(ids[1]), np.max(ids[1]), np.min(ids[0]), np.max(ids[0]) # VOC style, cf. COCO/YOLO style [x min, y max, width, height]
                     bbox = (x_min, x_max, y_min, y_max)
-                    bbox = self._bbox_to_normalized_pixel(bbox, self.dsize) # norm [x min, x max, y min, y max]
+                    # bbox = self._bbox_to_normalized_pixel(bbox, self.dsize) # norm [x min, x max, y min, y max]
 
                 else : # non
                     bbox = [EXCEPTION_NUM, EXCEPTION_NUM, EXCEPTION_NUM, EXCEPTION_NUM]
