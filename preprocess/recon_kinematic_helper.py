@@ -1,4 +1,4 @@
-from recon_kinematic_method import get_centroid, get_eoa, get_speed, get_IoU, get_gIoU
+from recon_kinematic_method import get_centroid, get_eoa, get_path_length, get_velocity, get_IoU, get_gIoU
 from loader import PETRAWBBOXLoader
 
 def get_bbox_loader(task, target_path, dsize):
@@ -24,7 +24,8 @@ def get_recon_method(method):
     recon_method = {
         'centroid': get_centroid,
         'eoa': get_eoa,
-        'speed': get_speed,
+        'pathlen': get_path_length,
+        'velocity': get_velocity,
         'IoU': get_IoU,
         'gIoU': get_gIoU,
     }
@@ -32,8 +33,9 @@ def get_recon_method(method):
     recon_method_col = {
         'centroid': ['x_centroid', 'y_centorid'],
         'eoa': ['eoa'],
-        'speed': ['x_speed', 'y_speed'],
-        'IoU': ['IoU'],
+        'pathlen': ['x_pathlen', 'y_pathlen'],
+        'velocity': ['velocity'],
+        'IoU': ['IoU', 'U'],
         'gIoU': ['gIoU'],
     }
 
