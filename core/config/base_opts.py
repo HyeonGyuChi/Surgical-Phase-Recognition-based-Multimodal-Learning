@@ -58,7 +58,7 @@ def parse_opts():
             help='Maximum training epoch')
 
     parser.add_argument('--num_gpus',
-            default=1,
+            default=2,
             type=int,
             help='How many GPUs to use for training')
 

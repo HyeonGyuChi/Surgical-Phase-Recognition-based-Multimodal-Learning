@@ -102,9 +102,11 @@ class MetricHelper():
                 'Balance-Acc': bal_acc,
                 'Percentage-Acc': p_acc,
                 'AUROC': auroc_mean,
-                'val_loss': self.loss_dict['valid'][-1],
             }
-            
+
+            if len(self.loss_dict['valid']) > 0:
+                metrics['val_loss'] = self.loss_dict['valid'][-1]
+                
             # exception
             for k, v in metrics.items():
                 if isinstance(v, list):

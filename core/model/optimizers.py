@@ -1,5 +1,6 @@
 import torch.optim as optim
 import torch_optimizer as torch_optim # pytorch로 코딩된 optimizer들 모음
+from warmup_scheduler import GradualWarmupScheduler
 
 
 def configure_optimizer(args, model):
@@ -93,12 +94,18 @@ def get_scheduler(args, optimizer):
             verbose=True,
         )
     elif schdlr_name == 'cosine_lr':
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(
+        base_scheduler = optim.lr_scheduler.CosineAnnealingLR(
             optimizer,
             T_max=args.max_epoch,
             eta_min=0,
             last_epoch=-1,
             verbose=True,
         )
-        
+
+        scheduler = GradualWarmupScheduler(optimizer, 
+                                            multiplier=1., 
+                                            total_epoch=34, 
+                                            after_scheduler=base_scheduler
+                                        )
+
     return scheduler
