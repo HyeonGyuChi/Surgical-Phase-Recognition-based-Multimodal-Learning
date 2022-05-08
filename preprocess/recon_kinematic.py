@@ -8,7 +8,9 @@ import cv2
 import pandas as pd
 from itertools import combinations
 
-from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method
+from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method, normalized_pixel, denormalized_pixel
+
+EXCEPTION_NUM = -100
 
 class recon_kinematic():
     def __init__(self, target_path, save_path, dsize=(512, 512), task='PETRAW'):
@@ -25,7 +27,7 @@ class recon_kinematic():
         self.target_path, self.save_path = target_path, save_path
         self.bbox_loader = set_bbox_loader(self.bbox_loader, self.target_path, self.dsize)
 
-    def reconstruct(self, methods, extract_objs, extract_pairs):
+    def reconstruct(self, methods, extract_objs, extract_pairs, is_normalized=True):
 
         recon_df = pd.DataFrame([]) # save and return
         columns = [] # in recon_df
@@ -69,14 +71,26 @@ class recon_kinematic():
             entities_cnt += entity_cnt_in_obj
 
         # list to np
-        entities_np = np.hstack(entities_np)
+        entities_np = np.hstack(entities_np) # pixel
         print('entities - {}'.format(entities_np.shape))
+            
+        # append recon df
+        if is_normalized: # normalized 
+            norm_entities_np = np.zeros(entities_np.shape)
+            w, h = self.dsize
+            for k, wt in enumerate([w, w, h, h] * entities_cnt):
+                for f_idx in range(entities_np.shape[0]):
+                    if not entities_np[f_idx, k] == EXCEPTION_NUM:
+                        norm_entities_np[f_idx, k] = normalized_pixel(entities_np[f_idx, k], wt)
+            
+            recon_df = pd.concat([recon_df, pd.DataFrame(norm_entities_np)], axis=1) # column bind
+        
+        else:
+            recon_df = pd.concat([recon_df, pd.DataFrame(entities_np)], axis=1) # column bind
+
+        recon_df.columns = columns
 
         print(entities_start_ids)
-
-        # append recon df
-        recon_df = pd.concat([recon_df, pd.DataFrame(entities_np)], axis=1) # column bind
-        recon_df.columns = columns
         
         print(recon_df)
         print('[-] \t arrange entity index ... {}'.format(extract_objs))
@@ -86,7 +100,7 @@ class recon_kinematic():
 
         print('\n[+] \t single reconstruct ... {}'.format(extract_objs))
 
-        single_methods = [m for m in methods if m in ['centroid', 'eoa', 'pathlen', 'velocity']]
+        single_methods = [m for m in methods if m in ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'velocity']]
         pair_methods = [m for m in methods if m in ['IoU', 'gIoU']]
         
         print('single method: ', single_methods)
@@ -96,7 +110,7 @@ class recon_kinematic():
             for obj in extract_objs: # ['Grasper', 'Blocks', 'obj3', ..]
                 for i, start_idx in enumerate(entities_start_ids[obj]):
                     kine_results = []
-                    recon_method, recon_method_col = get_recon_method(method)
+                    recon_method, recon_method_col, norm_weights = get_recon_method(method, self.dsize)
                     target_entity = '{}_{}'.format(obj, i)
                     
                     target_np = entities_np[:, start_idx: start_idx + len(entity_col)] # entitiy bbox info
@@ -104,17 +118,28 @@ class recon_kinematic():
                     # calc from single rows : apply method from frame by frame
                     if method in ['centroid', 'eoa']:
                         for f_idx in range(target_np.shape[0]):
-                            result = recon_method(target_np[f_idx, :])
+                            if method == 'eoa':
+                                result = recon_method(target_np[f_idx, :], self.dsize)
+                            else: 
+                                result = recon_method(target_np[f_idx, :])
+                                
                             kine_results.append(result)
 
                         kine_results = np.stack(kine_results) # list to np
                     
                     # calc from multiple rows : apply method from all frame
-                    if method in ['pathlen']:
+                    if method in ['partial_pathlen', 'cumulate_pathlen']:
                         kine_results = recon_method(target_np)
 
                     if method in ['velocity']:
                         kine_results = recon_method(target_np, interval_sec=1/30)
+
+                    # normalized 
+                    if is_normalized:
+                        for k, wt in enumerate(norm_weights):
+                            for f_idx in range(target_np.shape[0]):
+                                if not kine_results[f_idx, k] == EXCEPTION_NUM:
+                                    kine_results[f_idx, k] = normalized_pixel(kine_results[f_idx, k], wt)
 
                     # append recon df
                     recon_df = pd.concat([recon_df, pd.DataFrame(kine_results)], axis=1) # column bind
@@ -137,7 +162,7 @@ class recon_kinematic():
                 for i, src_start_idx in enumerate(entities_start_ids[src_obj]): # src per entiity
                     for j, target_start_idx in enumerate(entities_start_ids[target_obj]): # target per entiity
                         kine_results = []
-                        recon_method, recon_method_col = get_recon_method(method)
+                        recon_method, recon_method_col, norm_weights = get_recon_method(method, self.dsize)
                         
                         src_entity = '{}_{}'.format(src_obj, i)
                         target_entity = '{}_{}'.format(target_obj, j)
@@ -152,6 +177,13 @@ class recon_kinematic():
                                 kine_results.append(result)
                                 
                             kine_results = np.stack(kine_results) # list to np
+
+                        # normalized 
+                        if is_normalized:
+                            for k, wt in enumerate(norm_weights):
+                                for f_idx in range(src_np.shape[0]):
+                                    if not kine_results[f_idx, k] == EXCEPTION_NUM:
+                                        kine_results[f_idx, k] = normalized_pixel(kine_results[f_idx, k], wt)
 
                         # append recon df
                         recon_df = pd.concat([recon_df, pd.DataFrame(kine_results)], axis=1) # column bind
@@ -179,16 +211,19 @@ if __name__ == "__main__":
 
     data_root_path = base_path + '/PETRAW/Training'
     target_root_path = data_root_path + '/Segmentation'
-    save_root_path = data_root_path + '/Seg_kine8'
+    save_root_path = data_root_path + '/Seg_kine9'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
     
     rk = recon_kinematic("", "")
 
-    methods = ['centroid', 'eoa', 'pathlen', 'velocity', 'IoU', 'gIoU']
+    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'velocity', 'IoU', 'gIoU']
 
-    extract_objs = ['Grasper', 'Blocks']
-    extract_pairs = [('Grasper', 'Grasper'), ('Grasper', 'Blocks')]
+    # extract_objs = ['Grasper', 'Blocks']
+    # extract_pairs = [('Grasper', 'Grasper'), ('Grasper', 'Blocks')]
+
+    extract_objs = ['Grasper']
+    extract_pairs = [('Grasper', 'Grasper')]
     
     for key_val in file_list:
         target_path = target_root_path + '/{}'.format(key_val)

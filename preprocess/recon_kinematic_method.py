@@ -2,12 +2,6 @@ import numpy as np
 
 EXCEPTION_NUM = -100
 
-def normalized_pixel(pixel_np, size):
-    return pixel_np / size
-
-def denormalized_pixel(pixel_np, size):  
-    return pixel_np * size
-
 def is_exception(x_min, x_max, y_min, y_max):
     if EXCEPTION_NUM in [x_min, x_max, y_min, y_max]:
         return True
@@ -24,17 +18,18 @@ def get_centroid(bbox_np): # (x min, x max, y min, y max)
         
     return centroid # numpy, (cen_x,cen_y)
 
-def get_eoa(bbox_np): # (x min, x max, y min, y max)    
+def get_eoa(bbox_np, img_size): # (x min, x max, y min, y max)    
+    w, h = img_size 
     eoa = np.array([EXCEPTION_NUM])
 
     x_min, x_max, y_min, y_max = bbox_np[0], bbox_np[1], bbox_np[2], bbox_np[3] 
     
     if not is_exception(x_min, x_max, y_min, y_max):
-        eoa = np.array([(x_max - x_min) * (y_max - y_min) / 1.0])
+        eoa = np.array([(x_max - x_min) * (y_max - y_min) / w*h])
 
     return eoa # numpy, (eoa)
 
-def get_path_length(bbox_nps):
+def get_partial_path_length(bbox_nps):
     # TODO - exception 
     f_len, _ = bbox_nps.shape
     path_len = np.zeros((f_len, 2)) # x_pathlen, y_pathlen
@@ -57,6 +52,17 @@ def get_path_length(bbox_nps):
 
     return path_len # numpy, (x_pathlen, y_pathlen) * f_len
 
+def get_cumulate_path_length(bbox_nps):
+    # TODO - exception 
+    f_len, _ = bbox_nps.shape
+    cum_path_len = np.zeros((f_len, 2)) # x_pathlen, y_pathlen
+    path_len = np.abs(get_partial_path_length(bbox_nps)) # abs path
+
+    for f_idx in range(f_len):
+        cum_path_len[f_idx, :] += path_len[f_idx, :]
+
+    return cum_path_len # numpy, (cum_x_pathlen, cum_y_pathlen) * f_len
+
 
 def get_velocity(bbox_nps, interval_sec): # (x min, x max, y min, y max)
     # mv pixel/s = path length (pixel) / interval_sec 
@@ -64,7 +70,7 @@ def get_velocity(bbox_nps, interval_sec): # (x min, x max, y min, y max)
     f_len, _ = bbox_nps.shape
     velocity = np.zeros((f_len, 1)) # x_pathlen, y_pathlen
 
-    path_len = get_path_length(bbox_nps)
+    path_len = get_partial_path_length(bbox_nps)
     
     for f_idx in range(f_len):
         if f_idx == 0:
