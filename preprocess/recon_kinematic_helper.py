@@ -1,4 +1,4 @@
-from recon_kinematic_method import get_centroid, get_eoa, get_partial_path_length, get_cumulate_path_length, get_velocity, get_IoU, get_gIoU
+from recon_kinematic_method import get_centroid, get_eoa, get_partial_path_length, get_cumulate_path_length, get_speed, get_velocity, get_IoU, get_gIoU
 from loader import PETRAWBBOXLoader
 
 
@@ -34,29 +34,32 @@ def get_recon_method(method, img_size):
         'eoa': get_eoa,
         'partial_pathlen': get_partial_path_length,
         'cumulate_pathlen': get_cumulate_path_length,
+        'speed': get_speed,
         'velocity': get_velocity,
-        'IoU': get_IoU,
+        'IoU': get_IoU, # return_U = Fasle
         'gIoU': get_gIoU,
     }
 
     recon_method_col = {
         'centroid': ['x_centroid', 'y_centorid'], # ==> w, h
         'eoa': ['eoa'], # ==> w*h
-        'partial_pathlen': ['x_p_pathlen', 'y_p_pathlen'], # ==> w, h
-        'cumulate_pathlen': ['x_c_pathlen', 'y_c_pathlen'], # ==> w, h
-        'velocity': ['velocity'],
-        'IoU': ['IoU', 'U'],
+        'partial_pathlen': ['x_p_pathlen', 'y_p_pathlen'], # => 거리
+        'cumulate_pathlen': ['x_c_pathlen', 'y_c_pathlen'], # => 거리
+        'speed': ['speed'], # 속력 = 거리/시간 => (x_pathlen + y_pathlen) / (1/fps)
+        'velocity': ['x_velocity', 'y_velocity'], # => displacement / (1/fps) => [-, +] 부호 # 변위/시간
+        'IoU': ['IoU'],
         'gIoU': ['gIoU'],
     }
 
     w, h = img_size
     normalized_weight = {
         'centroid': [w, h], # ==> w, h
-        'eoa': [1], # no normalized 
+        'eoa': [w*h], # no normalized 
         'partial_pathlen': [w, h], # ==> w, h
         'cumulate_pathlen': [w, h], # ==> w, h
-        'velocity': [1], # no normalized
-        'IoU': [1],
+        'speed': [w*h],
+        'velocity': [w, h],
+        'IoU': [1], # only U normlaized, return_U = Fasle
         'gIoU': [1],
     }
 

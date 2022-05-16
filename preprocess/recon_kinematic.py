@@ -100,7 +100,7 @@ class recon_kinematic():
 
         print('\n[+] \t single reconstruct ... {}'.format(extract_objs))
 
-        single_methods = [m for m in methods if m in ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'velocity']]
+        single_methods = [m for m in methods if m in ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity']]
         pair_methods = [m for m in methods if m in ['IoU', 'gIoU']]
         
         print('single method: ', single_methods)
@@ -131,7 +131,7 @@ class recon_kinematic():
                     if method in ['partial_pathlen', 'cumulate_pathlen']:
                         kine_results = recon_method(target_np)
 
-                    if method in ['velocity']:
+                    if method in ['speed', 'velocity']:
                         kine_results = recon_method(target_np, interval_sec=1/30)
 
                     # normalized 
@@ -160,7 +160,12 @@ class recon_kinematic():
         for method in pair_methods: # ['IoU', 'gIoU']
             for src_obj, target_obj in extract_pairs: # ('Grasper', 'Grasper'), ('Grasper', 'Blocks') .. 
                 for i, src_start_idx in enumerate(entities_start_ids[src_obj]): # src per entiity
+                    if src_obj == target_obj and i > 0 : break  # same obj, calc only one time
+
                     for j, target_start_idx in enumerate(entities_start_ids[target_obj]): # target per entiity
+                        if i == j: # don't calc with same entitiy
+                            continue
+
                         kine_results = []
                         recon_method, recon_method_col, norm_weights = get_recon_method(method, self.dsize)
                         
@@ -211,19 +216,19 @@ if __name__ == "__main__":
 
     data_root_path = base_path + '/PETRAW/Training'
     target_root_path = data_root_path + '/Segmentation'
-    save_root_path = data_root_path + '/Seg_kine9'
+    save_root_path = data_root_path + '/Seg_kine11'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
     
     rk = recon_kinematic("", "")
-
-    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'velocity', 'IoU', 'gIoU']
 
     # extract_objs = ['Grasper', 'Blocks']
     # extract_pairs = [('Grasper', 'Grasper'), ('Grasper', 'Blocks')]
 
     extract_objs = ['Grasper']
     extract_pairs = [('Grasper', 'Grasper')]
+
+    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU']
     
     for key_val in file_list:
         target_path = target_root_path + '/{}'.format(key_val)
