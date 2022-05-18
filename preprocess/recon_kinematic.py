@@ -163,7 +163,7 @@ class recon_kinematic():
                     if src_obj == target_obj and i > 0 : break  # same obj, calc only one time
 
                     for j, target_start_idx in enumerate(entities_start_ids[target_obj]): # target per entiity
-                        if i == j: # don't calc with same entitiy
+                        if src_obj == target_obj and i == j: # don't calc with same entitiy
                             continue
 
                         kine_results = []

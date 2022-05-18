@@ -1,5 +1,5 @@
-from recon_kinematic_method import get_centroid, get_eoa, get_partial_path_length, get_cumulate_path_length, get_speed, get_velocity, get_IoU, get_gIoU
-from loader import PETRAWBBOXLoader
+from preprocess.recon_kinematic_method import get_centroid, get_eoa, get_partial_path_length, get_cumulate_path_length, get_speed, get_velocity, get_IoU, get_gIoU
+from preprocess.loader import PETRAWBBOXLoader
 
 
 def normalized_pixel(pixel_np, size):

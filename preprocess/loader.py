@@ -7,7 +7,7 @@ from tqdm import tqdm
 import cv2
 import pandas as pd
 
-EXCEPTION_NUM = -100
+EXCEPTION_NUM = -1000000
 
 class PETRAWBBOXLoader():
     def __init__(self, root_dir, dsize):
