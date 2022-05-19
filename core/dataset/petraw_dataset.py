@@ -10,6 +10,7 @@ from numpy import array
 import pickle
 
 from core.utils.augmentor import Augmentor#, SignalAugmentor
+from preprocess.recon_kinematic_filter import recon_kinematic_filter
 
 
 
@@ -19,6 +20,8 @@ class PETRAWDataset(torch.utils.data.Dataset):
         self.state = state
         self.data_path = args.data_base_path + '/PETRAW'
         self.task = args.task
+
+        self.num_of_ski_feature = 0
 
         self.name_to_phase = { # 3
             'Idle': 0,
@@ -369,21 +372,38 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
         self.data_dict['kinematic'] = {}
 
-        target_path = self.data_path + '/Seg_kine7'
+        target_path = self.data_path + '/Seg_kine11'
         file_list = glob(target_path + '/*.pkl')
         file_list = natsort.natsorted(file_list)
+
+        # filter of visual kinematic data
+        rk_filter = recon_kinematic_filter(task='PETRAW')
 
         for fpath in file_list:
             key_val = fpath.split('/')[-1].split('_')[0]
             
             if key_val in self.target_list:
+                '''
                 with open(fpath, 'rb') as f:
                     data = pickle.load(f)
+                '''
+                
+                rk_filter.set_src_path(fpath) # set .pkl (pd.Dataframe)
+                data = rk_filter.filtering(self.args.ski_methods, extract_objs=['Grasper'], extract_pairs=[('Grasper', 'Grasper')])
+
+                # print('dshape:', data.shape)
+                # print('col num: ', len(data.columns))
+                # print('col', data.columns)
+                # print('nump: ', data.to_numpy().shape)
+                data = data.to_numpy() # df to np
+
+                self.data_dict['kinematic'][key_val] = data # no more standradization
+                self.num_of_ski_feature = data.shape[1] # num of feature 
 
                 # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:4])
                 # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:8])
                 # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :8]), data[:, 8:10]), 1)
-                self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :8]), data[:, 8:]), 1) # 요기서 load
+                # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :28]), data[:, 28:]), 1) # 요기서 load
                 # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :4]), data[:, 8:]), 1)
 
     def load_labels(self):

@@ -135,4 +135,6 @@ class Predictor():
             self.metric_helper.write_preds(cls_hat, y)
             
         metric = self.metric_helper.calc_metric()
+
+        return metric
         

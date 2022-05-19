@@ -238,10 +238,17 @@ def parse_opts():
                     },
             type=dict,
             help='How many CPUs to use for data loading')    
-    
+
+    parser.add_argument('ski_methods',
+            default=['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU'],
+            nargs='*',
+            help='which do you want to use ski methods on training : PETRAW default setting : extract_objs=[Grasper], extract_paris=[(Grasper, Grasper)]')
+
     # -------------- etc --------------------
     parser.add_argument('--random_seed', type=int, default=3829, help='dataset random seed')
 
     parser.add_argument('--save_top_n', type=int, default=3, help='save best top N models')
+
+    parser.add_argument('--k', type=int, default=3, help='combination num of ski feature')
         
     return parser
