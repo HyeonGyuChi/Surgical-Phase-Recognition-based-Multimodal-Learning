@@ -230,8 +230,14 @@ class PETRAWDataset(torch.utils.data.Dataset):
         
         if go_subsample:
             for key, _data in self.data_dict.items():
-                for dir_name in _data.keys():
-                    self.data_dict[key][dir_name] = _data[dir_name][::sample_rate]
+                if key == 'kinematic': # pass subsampling on ski
+                    print('\t ---> pass subsampling on kinematic')
+                    for dir_name in _data.keys():
+                        self.data_dict[key][dir_name] = _data[dir_name][:]
+                else:
+                    for dir_name in _data.keys():
+                        self.data_dict[key][dir_name] = _data[dir_name][::sample_rate]
+
 
             for dir_name in self.labels.keys():
                 self.labels[dir_name] = self.labels[dir_name][::sample_rate]
@@ -372,7 +378,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
         self.data_dict['kinematic'] = {}
 
-        target_path = self.data_path + '/Seg_kine11'
+        target_path = self.data_path + '/Seg_kine11-5fps'
         file_list = glob(target_path + '/*.pkl')
         file_list = natsort.natsorted(file_list)
 
