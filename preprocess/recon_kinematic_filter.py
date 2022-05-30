@@ -13,7 +13,7 @@ class recon_kinematic_filter():
     def filtering(self, methods, extract_objs, extract_pairs):
         columns = [] # parse columns from recon_df
 
-        obj_key, obj_to_color = get_bbox_obj_info(get_bbox_loader(self.task, target_path='', dsize='')) # dummy (target_path, dsize)
+        obj_key, obj_to_color = get_bbox_obj_info(get_bbox_loader(self.task, target_path='', dsize='', sample_rate='')) # dummy (target_path, dsize, sample_rate)
         
         # print('\n[+] \tsetting filter columns ... \n\tmethod : {} \n\textract_objs : {} ==> {}\n'.format(methods, extract_objs, extract_pairs))
         # base

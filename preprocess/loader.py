@@ -10,9 +10,10 @@ import pandas as pd
 EXCEPTION_NUM = -1000000
 
 class PETRAWBBOXLoader():
-    def __init__(self, root_dir, dsize):
+    def __init__(self, root_dir, dsize, sample_rate):
         self.root_dir = root_dir
         self.dsize = dsize
+        self.sample_rate = sample_rate # set 6, (30fps -> 5fps)
 
         self.obj_key = ['Grasper', 'Blocks', 'obj3', 'obj4', 'obj5']
 
@@ -30,12 +31,15 @@ class PETRAWBBOXLoader():
     def set_dsize(self, dsize): # should set
         self.dsize = dsize # w, h
 
+    def set_sample_rate(self, sample_rate): # should set
+        self.sample_rate = sample_rate  # set 6, (30fps -> 5fps)
+
     def load_data(self, objs):
         
         bbox_data = {}
 
         frame_list = glob(self.root_dir + '/*')
-        frame_list = natsort.natsorted(frame_list)
+        frame_list = natsort.natsorted(frame_list)[::self.sample_rate]
 
         for fi, fpath in enumerate(tqdm(frame_list)):
             # extract bbox each tools

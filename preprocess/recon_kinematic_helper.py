@@ -9,16 +9,17 @@ def denormalized_pixel(pixel_np, size):
     return pixel_np * size
 
 
-def get_bbox_loader(task, target_path, dsize):
+def get_bbox_loader(task, target_path, dsize, sample_rate):
     dataloader = {
         'PETRAW': PETRAWBBOXLoader,
     }
 
-    return dataloader[task](target_path, dsize)
+    return dataloader[task](target_path, dsize, sample_rate)
 
-def set_bbox_loader(bbox_loader, target_path, dsize):
+def set_bbox_loader(bbox_loader, target_path, dsize, sample_rate):
     bbox_loader.set_root_dir(target_path)
     bbox_loader.set_dsize(dsize)
+    bbox_loader.set_sample_rate(sample_rate)
 
     return bbox_loader
 

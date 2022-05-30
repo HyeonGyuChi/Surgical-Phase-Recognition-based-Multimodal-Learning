@@ -10,18 +10,19 @@ from itertools import combinations
 
 from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method, normalized_pixel, denormalized_pixel
 
-EXCEPTION_NUM = -100
+EXCEPTION_NUM = -1000000
 
 class recon_kinematic():
-    def __init__(self, target_path, save_path, dsize=(512, 512), task='PETRAW'):
+    def __init__(self, target_path, save_path, sample_rate, dsize=(512, 512), task='PETRAW'):
         self.target_path = target_path
         self.save_path = save_path
 
         # hyper config
         self.dsize = dsize # w, h
+        self.sample_rate = sample_rate
 
         # bbox dataloader setup
-        self.bbox_loader = get_bbox_loader(task, self.target_path, self.dsize)
+        self.bbox_loader = get_bbox_loader(task, self.target_path, self.dsize, self.sample_rate)
 
     def set_path(self, target_path, save_path):
         self.target_path, self.save_path = target_path, save_path
@@ -216,11 +217,11 @@ if __name__ == "__main__":
 
     data_root_path = base_path + '/PETRAW/Training'
     target_root_path = data_root_path + '/Segmentation'
-    save_root_path = data_root_path + '/Seg_kine11'
+    save_root_path = data_root_path + '/Seg_kine11-5fps'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
     
-    rk = recon_kinematic("", "")
+    rk = recon_kinematic("", "", 6) # sample rate 6 (5fps)
 
     # extract_objs = ['Grasper', 'Blocks']
     # extract_pairs = [('Grasper', 'Grasper'), ('Grasper', 'Blocks')]
