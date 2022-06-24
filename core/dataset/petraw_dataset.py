@@ -66,7 +66,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         data = {}
-        
+    
         for dtype in self.data_dict.keys():
             if dtype == 'video':
                 vpath_list = self.data_dict[dtype][index]
@@ -79,9 +79,12 @@ class PETRAWDataset(torch.utils.data.Dataset):
 
                 X = self.aug(X)
                 
-                X = torch.stack([torch.Tensor(_X) for _X in X], dim=0)                
-                # X = X.permute(1, 0, 2, 3).unsqueeze(0)
-                X = X.permute(1, 0, 2, 3)
+                X = torch.stack([torch.Tensor(_X) for _X in X], dim=0)         
+                       
+                if self.args.model == 'slowfast':
+                    X = X.permute(1, 0, 2, 3).unsqueeze(0)
+                else:
+                    X = X.permute(1, 0, 2, 3)
 
                 data[dtype] = X
             elif dtype == 'mask':
@@ -311,7 +314,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
         self.data_dict['video'] = {}
 
-        target_path = self.data_path + '/Video'
+        target_path = self.data_path + '/Img'
         file_list = glob(target_path + '/*')
         file_list = natsort.natsorted(file_list)
 

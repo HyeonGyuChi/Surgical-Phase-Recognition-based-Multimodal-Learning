@@ -34,12 +34,13 @@ class Trainer():
 
         # Load dataset
         print('======= Load Dataset =======')
-        self.train_loader, self.val_loader, ski_feature_num = get_dataset(self.args, return_ski_feature_num=True) # @HG modify
+        # self.train_loader, self.val_loader, ski_feature_num = get_dataset(self.args, return_ski_feature_num=True) # @HG modify
+        self.train_loader, self.val_loader = get_dataset(self.args, return_ski_feature_num=False) # @HG modify
         self.set_class_weight()
 
         # TODO: lstm feature 개수변경 (for variaty of ski_method)
-        print('SKI FEATURE NUM: ', ski_feature_num)
-        self.args.input_size = ski_feature_num # @HG modify
+        # print('SKI FEATURE NUM: ', ski_feature_num)
+        # self.args.input_size = ski_feature_num # @HG modify
         
         # Load model
         # Set device type [cpu or cuda]

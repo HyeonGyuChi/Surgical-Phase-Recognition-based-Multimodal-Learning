@@ -1,3 +1,11 @@
+def add_slowfast_args(parser):
+    parser.add_argument('--slowfast_depth',
+            default=50,
+            type=int,)
+
+    return parser
+
+
 def add_lstm_args(parser):
     parser.add_argument('--n_layer',
             default=1,
@@ -113,6 +121,8 @@ def add_opts(parser):
         parser = add_lstm_args(parser)
     elif 'resnet' in model_name:
         parser = add_resnet_args(parser)
+    elif 'slowfast' in model_name:
+        parser = add_slowfast_args(parser)
     elif 'multi' in model_name:
         parser = add_multi_args(parser)
         

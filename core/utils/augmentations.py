@@ -42,12 +42,30 @@ class ToTensor(object):
         return torch.Tensor(img)
 
 class Normalize(object):
-    def __init__(self, mean, std):
+    def __init__(self, mean, std, is_rgb):
         self.mean = mean
         self.std = std
+        self.is_rgb = is_rgb
 
     def __call__(self, img):
-        return (img - self.mean) / self.std
+        if isinstance(self.mean, list):
+            tmp = []
+
+            if self.is_rgb:
+                img = torch.flip(img, [0])
+                
+            for i in range(3):
+                img[i, :, :] = (img[i, :, :] - self.mean[i]) / self.std[i]
+
+            return img
+        else:
+            if self.is_rgb:
+                img = torch.flip(img, [0])
+                img = (img-self.mean) / self.std
+
+                return img
+            else:
+                return (img - self.mean) / self.std
 
 # Segmentation Augmentations
 class TemporalSegResize(object):

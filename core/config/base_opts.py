@@ -239,6 +239,20 @@ def parse_opts():
             type=dict,
             help='How many CPUs to use for data loading')    
 
+    parser.add_argument('--infer_augmentations',
+            default={
+                    'resize': [512],
+                    'to_tensor': [],
+                #     't_normalize': [0.5,0.5],
+                    'normalize': [
+                        [0.4592817225, 0.295195874, 0.2642207706],
+                        [0.2362405976, 0.2010245226, 0.1929121238],
+                        False,
+                    ]
+                    },
+            type=dict,
+            help='How many CPUs to use for data loading')    
+
     parser.add_argument('ski_methods',
             default=['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU'],
             nargs='*',
