@@ -56,20 +56,20 @@ def add_multi_args(parser):
     parser.add_argument('--model_params',
             default={
                     'video': {
-                        # 'model': 'resnet3d',
-                        'model': 'slowfast',
+                        'model': 'resnet3d',
+                        # 'model': 'slowfast',
                         'input_size': 224,
-                        # 'feature_size': 512,
-                        'feature_size': 2304,
+                        'feature_size': 512,
+                        # 'feature_size': 2304,
                         # 'restore_path': None,
-                        # 'restore_path': 'logs/resnet3d-cb-loss/epoch:49-val_loss:7.8618.pth',
-                        'restore_path': '/raid/results/phase_recognition/mmaction/petraw/multi_task/slowfast_r50_e50_clip8_split1/latest.pth',
+                        'restore_path': 'logs/resnet3d-cb-loss/epoch:49-val_loss:7.8618.pth',
+                        # 'restore_path': '/raid/results/phase_recognition/mmaction/petraw/multi_task/slowfast_r50_e50_clip8_split1/latest.pth',
                     },
                     'kinematic': {
                         'model': 'lstm',
-                        # 'input_size': 28,
-                        # 'restore_path': 'logs/lstm-cb-loss/epoch:44-val_loss:8.2361.pth',
-                        'input_size': 11,
+                        'input_size': 28,
+                        'restore_path': 'logs/lstm-cb-loss/epoch:44-val_loss:8.2361.pth',
+                        # 'input_size': 11,
                         # 'restore_path': 'logs/lstm-cb-loss-ski/epoch:49-val_loss:9.3289.pth',
                         # 'restore_path': 'logs/lstm-cb-loss-ski_swin/epoch:24-val_loss:9.4483.pth',
                         # 'restore_path': 'logs/lstm-cb-loss-ski_ocr/epoch:27-val_loss:9.4528.pth',
@@ -95,7 +95,7 @@ def add_multi_args(parser):
                     'conv': {
                         'f_dim': 512,
                         'z_dim': 512,
-                        'fusion_type': 'c',
+                        'fusion_type': 'e',
                         'conv_sz': 3,
                         'use_pairwise': True,
                         'multi_scale': False,
@@ -106,8 +106,8 @@ def add_multi_args(parser):
     return parser
 
 def add_opts(parser):
-    tmp_args = parser.parse_args()
-    model_name = tmp_args.model
+    known_args, _ = parser.parse_known_args()
+    model_name = known_args.model
     
     if 'lstm' in model_name:
         parser = add_lstm_args(parser)

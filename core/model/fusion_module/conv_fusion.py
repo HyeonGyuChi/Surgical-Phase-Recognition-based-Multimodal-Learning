@@ -113,17 +113,40 @@ class ConvFusion(nn.Module):
             
 
         elif self.fusion_type == 'd': # a + b
-                self.dim_weights = nn.Parameter(torch.randn((self.n_modality, self.f_emb_sz)))
-                self.z_conv = nn.Conv1d(self.n_modality, 1, self.conv_sz, padding=self.conv_sz//2)
-                # self.z_conv = nn.Sequential(
-                #     nn.Conv1d(self.n_modality, self.n_modality, self.conv_sz, padding=self.conv_sz//2),
-                #     nn.ReLU(),
-                #     nn.BatchNorm1d(self.n_modality),
-                #     nn.Conv1d(self.n_modality, 1, self.conv_sz, padding=self.conv_sz//2),
-                #     nn.ReLU(),
-                # )
+            self.dim_weights = nn.Parameter(torch.randn((self.n_modality, self.f_emb_sz)))
+            self.z_conv = nn.Conv1d(self.n_modality, 1, self.conv_sz, padding=self.conv_sz//2)
+            # self.z_conv = nn.Sequential(
+            #     nn.Conv1d(self.n_modality, self.n_modality, self.conv_sz, padding=self.conv_sz//2),
+            #     nn.ReLU(),
+            #     nn.BatchNorm1d(self.n_modality),
+            #     nn.Conv1d(self.n_modality, 1, self.conv_sz, padding=self.conv_sz//2),
+            #     nn.ReLU(),
+            # )
 
-                self.to_cls_emb = torch.nn.Linear(self.f_emb_sz * 2, self.f_emb_sz)
+            self.to_cls_emb = torch.nn.Linear(self.f_emb_sz * 2, self.f_emb_sz)
+
+        elif self.fusion_type == 'e':
+            to_embedding = []
+
+            for idx in range(self.n_modality):
+                to_embedding.append(
+                    nn.Linear(self.f_emb_sz, self.f_emb_sz)
+                )
+
+            self.recon_emb = nn.ModuleList(to_embedding)
+            self.loss_fn = nn.MSELoss()
+
+
+            self.linear = nn.Linear(self.f_emb_sz*self.n_modality, self.f_emb_sz)
+
+            self.z_conv = nn.Sequential(
+                    nn.Conv1d(self.n_modality, self.n_modality, self.conv_sz, padding=self.conv_sz//2),
+                    nn.ReLU(),
+                    nn.BatchNorm1d(self.n_modality),
+                    nn.Conv1d(self.n_modality, 1, self.conv_sz, padding=self.conv_sz//2),
+                    nn.ReLU(),
+                )
+
 
     def set_classifiers(self, n_class_list):
         for n_class in n_class_list:
@@ -158,6 +181,7 @@ class ConvFusion(nn.Module):
         elif self.fusion_type == 'c':
             for i in range(self.n_modality):
                 f = F.normalize(f_emb_list[i], 1)
+
                 for j in range(self.n_modality):
                     if i != j:
                         _z = F.normalize(z_emb_list[i].detach(), 1)
@@ -174,6 +198,45 @@ class ConvFusion(nn.Module):
             tz2 = self.z_conv(z).squeeze()
             z2 = self.to_cls_emb(torch.cat([tz1, tz2], 1))
             loss_fuse = None
+
+        elif self.fusion_type == 'e':
+            # z_mat = torch.stack([z[bi,0:1, ].view(z.size(2), -1) * z[bi, 1:2, ] for bi in range(z.size(0))])
+            # z2 = self.linear(torch.cat((torch.sum(z_mat, dim=1), torch.sum(z_mat, dim=2)), 1))
+            # loss_fuse = None
+            # z2 = self.linear(torch.cat(z_emb_list, 1))
+            z2 = self.z_conv(z)
+
+            loss_fuse = 0
+            f_emb_list2 = []
+            for idx in range(self.n_modality):
+                f_emb_list2.append(self.recon_emb[idx](z2))
+                loss_fuse += self.loss_fn(f_emb_list[idx], f_emb_list2[idx])
+
+            # aux_outputs = []
+
+            # for f_emb in f_emb_list:
+            #     _outputs = []
+
+            #     for ci in range(len(self.classifiers)):
+            #         x = self.classifiers[ci](f_emb)
+            #         x = x.view(z2.size(0), -1)
+            #         out = self.Softmax(x)
+
+            #         _outputs.append(out)
+            #     aux_outputs.append(_outputs)
+
+            # outputs = []
+        
+            # for ci in range(len(self.classifiers)):
+            #     x = self.classifiers[ci](z2)
+            #     # x = x.view(z2.size(0), self.seq_size, -1)
+            #     x = x.view(z2.size(0), -1)
+
+            #     out = self.Softmax(x)
+            #     outputs.append(out)
+
+            # return outputs, loss_fuse, aux_outputs
+            
 
         outputs = []
         

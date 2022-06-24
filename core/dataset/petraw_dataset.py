@@ -47,21 +47,22 @@ class PETRAWDataset(torch.utils.data.Dataset):
             [255, 0, 255], # blocks
         ]
         self.seg_to_colors = dict(zip(range(1,6), colors))
-        self.data_path += '/Training'
-        self.set_load_ids()
-
-        self.load_data()
 
         if self.state == 'train':
+            self.data_path += '/Training'
             self.aug = Augmentor(self.args.augmentations)
             self.mk_aug = Augmentor(self.args.mask_augmentations)
 
         elif self.state == 'valid':
+            self.data_path += '/Test'
             self.aug = Augmentor(self.args.val_augmentations)
             self.mk_aug = Augmentor(self.args.mask_augmentations)
+
+        self.set_load_ids()
+        self.load_data()
         
     def __len__(self):
-        return len(self.labels)
+        return len(self.labels) #// 10
 
     def __getitem__(self, index):
         data = {}
@@ -79,7 +80,8 @@ class PETRAWDataset(torch.utils.data.Dataset):
                 X = self.aug(X)
                 
                 X = torch.stack([torch.Tensor(_X) for _X in X], dim=0)                
-                X = X.permute(1, 0, 2, 3).unsqueeze(0)
+                # X = X.permute(1, 0, 2, 3).unsqueeze(0)
+                X = X.permute(1, 0, 2, 3)
 
                 data[dtype] = X
             elif dtype == 'mask':

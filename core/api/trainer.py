@@ -250,12 +250,24 @@ class Trainer():
         
     def forward(self, x, y):
         if self.args.model == 'multi':
-            y_hat, fuse_loss = self.model(x)
+            # y_hat, fuse_loss = self.model(x)
+            loss = 0
             
-            loss = self.calc_loss(y_hat, y)
+            outputs = self.model(x)
+            if len(outputs) == 2:
+                y_hat, fuse_loss = outputs
+            elif len(outputs) == 3:
+                y_hat, fuse_loss, aux_y_hat = outputs
+
+                for aux_y in aux_y_hat:
+                    loss += self.calc_loss(aux_y, y)
+            
+            loss += self.calc_loss(y_hat, y)
             
             if fuse_loss is not None:
                 loss += torch.mean(fuse_loss)
+
+                
         elif self.args.model == 'slowfast':
             y_hat = self.model.forward(x['video'], return_loss=True, infer_3d=True)
 

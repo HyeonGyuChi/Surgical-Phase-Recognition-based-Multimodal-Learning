@@ -4,7 +4,7 @@ backbone_norm_cfg = dict(type='LN', requires_grad=True)
 classes=6
 model = dict(
     type='EncoderDecoder',
-    pretrained='/code/multimodal/accessory/mmsegmentation/pretrain/upernet_swin_base_patch4_window7.pth',
+    pretrained='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth',
     # pretrained=None,
     backbone=dict(
         type='SwinTransformer',
@@ -65,7 +65,8 @@ model = dict(
 
 # dataset settings
 dataset_type = 'PETRAWDataset'
-data_root = '/dataset3/multimodal/PETRAW/Training'
+# data_root = '/dataset3/multimodal/PETRAW/Training'
+data_root = '/dataset3/multimodal/PETRAW/Test'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 scale_size = (769, 769)
@@ -98,7 +99,7 @@ test_pipeline = [
 ]
 data = dict(
     samples_per_gpu=16,
-    workers_per_gpu=6,
+    workers_per_gpu=6*3,
     train=dict(
         type=dataset_type,
         data_root=data_root,
@@ -116,7 +117,7 @@ data = dict(
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='test/img3',
+        img_dir='test2/img_1',
         # ann_dir='test/seg',
         # split='split_val.txt',
         pipeline=test_pipeline))
@@ -156,5 +157,5 @@ lr_config = dict(
 runner = dict(type='EpochBasedRunner', max_epochs=100)
 checkpoint_config = dict(by_epoch=True, interval=100)
 evaluation = dict(interval=100, metric='mIoU')
-work_dir = '/code/multimodal/logs/swin_petraw'
+work_dir = '/code/multimodal/logs/swin_petraw_test'
 gpu_ids = range(0, 1)

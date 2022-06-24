@@ -58,7 +58,7 @@ def parse_opts():
             help='Maximum training epoch')
 
     parser.add_argument('--num_gpus',
-            default=2,
+            default=1,
             type=int,
             help='How many GPUs to use for training')
 
@@ -122,7 +122,7 @@ def parse_opts():
     parser.add_argument('--optimizer',
             default='adam',
             type=str,
-            choices=['sgd', 'adam', 'lamb'],
+            choices=['sgd', 'adam', 'lamb', 'adamw', 'adamp', 'sgdw'],
             help=('What optimizer to use for training'
                 '[Types : sgd, adam]'))
 
@@ -152,7 +152,7 @@ def parse_opts():
     parser.add_argument('--dataset', 
             default='petraw', 
             type=str, 
-            choices=['mnist', 'jigsaws', 'misaw', 'petraw'], 
+            choices=['mnist', 'jigsaws', 'misaw', 'petraw', 'gast'], 
             help='choose a multimodal dataset')
 
     parser.add_argument('--data_base_path',

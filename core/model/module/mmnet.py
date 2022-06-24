@@ -57,7 +57,7 @@ class MMNet(nn.Module):
     def init_fusion_method(self):
         if self.args.fusion_type == 'conv':
             self.fusion_module = ConvFusion(self.args, self.n_modality, self.modality_size_list)
-            
+
     def set_classifiers(self, n_class_list):
         self.fusion_module.set_classifiers(n_class_list)
         
@@ -69,7 +69,6 @@ class MMNet(nn.Module):
             features.append(self.backbones[modality].get_feature(x, modality))
         
         return self.fusion_module(features)
-        
         
 def get_fusion_model(args):
     return MMNet(args)

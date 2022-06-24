@@ -9,7 +9,8 @@ def main():
     os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda_list
 
     trainer = Trainer(args)
-    trainer.fit()
+    print(len(trainer.train_loader.dataset))
+    # trainer.fit()
 
     # predictor = Predictor(args)
     # predictor.inference()

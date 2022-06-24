@@ -1,10 +1,12 @@
 # model settings
 norm_cfg = dict(type='SyncBN', requires_grad=True)
 backbone_norm_cfg = dict(type='LN', requires_grad=True)
-classes=6
+classes=32
 model = dict(
     type='EncoderDecoder',
-    pretrained='/code/multimodal/accessory/mmsegmentation/pretrain/upernet_swin_base_patch4_window7.pth',
+    pretrained='https://download.openmmlab.com/mmsegmentation/v0.5/swin/upernet_swin_base_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K/upernet_swin_base_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210526_192340-593b0e13.pth',
+    # pretrained='/code/multimodal/accessory/mmsegmentation/pretrain/upernet_swin_base_patch4_window7_mmseg.pth',
+    # pretrained='https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_base_patch4_window7_224.pth',
     # pretrained=None,
     backbone=dict(
         type='SwinTransformer',
@@ -29,7 +31,6 @@ model = dict(
         use_abs_pos_embed=False,
         act_cfg=dict(type='GELU'),
         norm_cfg=backbone_norm_cfg,
-        # pretrain_style='official'),
         ),
     decode_head=dict(
         type='UPerHead',
@@ -53,7 +54,6 @@ model = dict(
         num_convs=1,
         concat_input=False,
         dropout_ratio=0.1,
-        # num_classes=19,
         num_classes=classes,
         norm_cfg=norm_cfg,
         align_corners=False,
@@ -64,8 +64,26 @@ model = dict(
     test_cfg=dict(mode='whole'))
 
 # dataset settings
-dataset_type = 'PETRAWDataset'
-data_root = '/dataset3/multimodal/PETRAW/Training'
+dataset_type = 'HsdbDataset'
+data_root = '/dataset3/multimodal/'
+
+######## Choose Data Split ########
+option = 'real' #MIX_real  #DRreal   #SEANMIX_real  #SEAN_RUSreal TAG_RUSreal, #cpv3_real
+split_num, gast_num = '56', '40'  
+###################################
+
+train_img_dir = 'gastrectomy-'+gast_num+'/images'
+train_ann_dir = 'gastrectomy-'+gast_num+'/annotations/semantic_segmentation' #/gastrec'+gast_num+'_semantic_mask_train' + split_num
+if gast_num == '100':
+    prefix = '100_'
+else:
+    prefix = ''
+
+base_split_path = 'gastrectomy-'+gast_num+'/'
+train_split_path = base_split_path+prefix+option+'_train'+split_num+'.txt'
+valid_split_path = base_split_path+prefix+'valid'+split_num+'.txt'
+work_dir = '/code/multimodal/logs/swin_g40_56'
+
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 scale_size = (769, 769)
@@ -98,27 +116,27 @@ test_pipeline = [
 ]
 data = dict(
     samples_per_gpu=16,
-    workers_per_gpu=6,
+    workers_per_gpu=6*3,
     train=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='train/img',
-        ann_dir='train/seg',
-        # split='split_train.txt',
+        img_dir=train_img_dir,
+        ann_dir=train_ann_dir,
+        split=train_split_path,
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='val/img',
-        ann_dir='val/seg',
-        # split='split_val.txt',
+        img_dir=train_img_dir,
+        ann_dir=train_ann_dir,
+        split=valid_split_path,
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         data_root=data_root,
-        img_dir='test/img6',
-        # ann_dir='test/seg',
-        # split='split_val.txt',
+        img_dir=train_img_dir,
+        ann_dir=train_ann_dir,
+        split=valid_split_path,
         pipeline=test_pipeline))
 
 log_config = dict(
@@ -153,8 +171,7 @@ lr_config = dict(
     # min_lr_ratio=1e-07,
     min_lr=0.0,
     by_epoch=True)
-runner = dict(type='EpochBasedRunner', max_epochs=100)
+runner = dict(type='EpochBasedRunner', max_epochs=300)
 checkpoint_config = dict(by_epoch=True, interval=100)
 evaluation = dict(interval=100, metric='mIoU')
-work_dir = '/code/multimodal/logs/swin_petraw'
 gpu_ids = range(0, 1)
