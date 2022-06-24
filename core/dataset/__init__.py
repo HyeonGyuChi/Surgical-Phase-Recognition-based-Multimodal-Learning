@@ -14,7 +14,7 @@ dataset_dict = {
 }
 
 
-def get_dataset(args):
+def get_dataset(args, return_ski_feature_num=False):
     if args.dataset == 'mnist':
         import torchvision.transforms as transforms
         
@@ -40,6 +40,9 @@ def get_dataset(args):
                             shuffle=False,
                             num_workers=args.num_workers,
                             pin_memory=True)
-        
-    return train_loader, val_loader
+
+    if return_ski_feature_num:
+        return train_loader, val_loader, trainset.num_of_ski_feature
+    else:
+        return train_loader, val_loader
 

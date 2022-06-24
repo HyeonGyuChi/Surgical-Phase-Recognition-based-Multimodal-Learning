@@ -7,6 +7,7 @@ import natsort
 import time
 from glob import glob
 from tqdm import tqdm
+from natsort import natsort
 
 from core.model import get_model, get_fusion_model, get_loss, configure_optimizer
 from core.dataset import get_dataset
@@ -33,8 +34,12 @@ class Trainer():
 
         # Load dataset
         print('======= Load Dataset =======')
-        self.train_loader, self.val_loader = get_dataset(self.args)
+        self.train_loader, self.val_loader, ski_feature_num = get_dataset(self.args, return_ski_feature_num=True) # @HG modify
         self.set_class_weight()
+
+        # TODO: lstm feature 개수변경 (for variaty of ski_method)
+        print('SKI FEATURE NUM: ', ski_feature_num)
+        self.args.input_size = ski_feature_num # @HG modify
         
         # Load model
         # Set device type [cpu or cuda]
@@ -102,7 +107,7 @@ class Trainer():
         self.args.save_path += '{}]-1'.format(dtype_list)
 
         if os.path.exists(self.args.save_path):
-            for idx in range(2, 99):
+            for idx in range(2, 1000):
                 tmp_save_path = self.args.save_path[:-2] + '-{}'.format(idx)
                 
                 if not os.path.exists(tmp_save_path):
@@ -173,6 +178,8 @@ class Trainer():
             # validation phase
             self.valid()
 
+        return self.args
+
     def train(self):
         self.model.train()
         
@@ -228,8 +235,18 @@ class Trainer():
         else:
             self.scheduler.step()
         
-        if self.metric_helper.update_best_metric(metric):
+        if self.metric_helper.update_best_metric(metric): # save best metric
             self.save_checkpoint()
+
+        if self.current_epoch == self.args.max_epoch: # last epoch checkpoint saving
+            # get current target metric
+            target_met = 0
+            for met in metric:
+                target_met += met[self.args.target_metric]
+            
+            target_met /= len(metric)
+
+            self.save_last_checkpoint(target_met)
         
     def forward(self, x, y):
         if self.args.model == 'multi':
@@ -322,14 +339,47 @@ class Trainer():
 
         print('[+] save checkpoint : ', save_path)
 
-        # last epoch이면 저장
-        if self.current_epoch == self.args.max_epoch: # last epoch checkpoint saving
-            save_path = '{}/epoch:{}-{}:{:.4f}-last.pth'.format(
-                        self.args.save_path,
-                        self.current_epoch,
-                        self.args.target_metric,
-                        self.metric_helper.get_best_metric(),
-                    )
+    def save_last_checkpoint(self, last_metric):
+        # last checkpoint saving, best epoch save
+        
+        # total best model 저장 => add -best 및 set restore_path
+        pt_list = []
+        dir_list = os.listdir(self.args.save_path)
+        
+        for pt in dir_list:
+            if os.path.splitext(pt)[-1] == '.pth':
+                pt_list.append(pt)
+        
+        best_pt_path = os.path.join(self.args.save_path, natsort.natsorted(pt_list)[-1])
+        rename_pt_path = os.path.join(self.args.save_path, os.path.splitext(os.path.basename(best_pt_path))[0] + '-best' + '.pth')
+        print('best:', best_pt_path)
+        print('rename:', rename_pt_path)
+        os.rename(best_pt_path, rename_pt_path)
 
-            torch.save(ckpt_state, save_path)
-            print('[+] save checkpoint (Last Epoch) : ', save_path)
+        self.args.restore_path = rename_pt_path # set restore_path
+
+        # 현재 값들 (checkpoints)
+        if self.args.num_gpus > 1:
+            ckpt_state = {
+                'model': self.model.module.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
+                'scheduler': self.scheduler.state_dict(),
+                'epoch': self.current_epoch,
+            }
+        else:
+            ckpt_state = {
+                'model': self.model.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
+                'scheduler': self.scheduler.state_dict(),
+                'epoch': self.current_epoch,
+            }
+
+        save_path = '{}/epoch:{}-{}:{:.4f}-last.pth'.format(
+                    self.args.save_path,
+                    self.current_epoch,
+                    self.args.target_metric,
+                    last_metric,
+                )
+
+        torch.save(ckpt_state, save_path)
+        print('[+] save checkpoint (Last Epoch) : ', save_path)
