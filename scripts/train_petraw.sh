@@ -3,8 +3,8 @@ cd ..
 
 CUDA_VISIBLE_DEVICES=5 python main.py --num_gpus 1 \
                         --model 'lstm' \
-                        --input_size 28 --hidden_size 256 \
-                        --linear_dim 256 --n_layer 1 \
+                        --input_size 28 --hidden_size 512 \
+                        --linear_dim 512 --n_layer 1 \
                         --batch_size 128 --dataset 'petraw' \
                         --data_base_path '/dataset3/multimodal' \
                         --data_type 'ki' --optimizer 'adam' \
@@ -23,7 +23,7 @@ CUDA_VISIBLE_DEVICES=5 python main.py --num_gpus 1 \
 #                         --data_base_path '/dataset3/multimodal' \
 #                         --data_type 'ki' --optimizer 'adam' \
 #                         --lr_scheduler 'cosine_lr' \
-#                         --loss_fn 'cb' \
+#                         --loss_fn 'ce' \
 #                         --target_metric 'Balance-Acc' \
 #                         --inference_per_frame \
 #                         --fold 1 \

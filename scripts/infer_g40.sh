@@ -42,3 +42,5 @@ done
 
 
 
+
+# CUDA_VISIBLE_DEVICES=5 python infer_g40.py --model segmodel --data_base_path /dataset3/multimodal --batch_size 64

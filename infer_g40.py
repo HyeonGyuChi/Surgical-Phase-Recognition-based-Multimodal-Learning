@@ -93,7 +93,7 @@ def main():
                     img_path = li[i]
                     tokens = img_path.split('/')
 
-                    save_path = '/dataset3/multimodal/gastric/Segmentation' + '/{}/{}'.format(*tokens[-3:-1])
+                    save_path = '/dataset3/multimodal/gastric/Segmentation_ocr' + '/{}/{}'.format(*tokens[-3:-1])
                     os.makedirs(save_path, exist_ok=True)
                     save_path2 = save_path + '/{}.gz'.format(tokens[-1].split('.')[0])
                     # cv2.imwrite(save_path2, out)
