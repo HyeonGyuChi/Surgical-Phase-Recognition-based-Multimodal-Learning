@@ -187,6 +187,7 @@ def parse_opts():
 
     parser.add_argument('--fold',
             default=1,
+            type=int,
             help='valset 1, 2, 3, 4, 5, free=for setting train_videos, val_vidoes')
 
     parser.add_argument('--num_workers',

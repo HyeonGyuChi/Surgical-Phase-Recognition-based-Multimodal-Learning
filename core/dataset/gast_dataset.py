@@ -40,15 +40,17 @@ class GastrectomyDataset(torch.utils.data.Dataset):
                 'R074', 'R084', 'R100', 'R116', 'R117', 
                 'R201', 'R203', 'R205', 'R207', 'R208', 
                 'R210', 'R302', 'R303', 'R304', 'R313'],
+                4: ['R001'],
             },
 
             'valid': {
                 1: ['R003', 'R004', 'R006', 'R013', 'R017', 'R018', 'R022', 'R116', 'R208', 'R303'],
                 2: ['R001', 'R007', 'R010', 'R019', 'R056', 'R074', 'R100', 'R117', 'R203', 'R304'],
                 3: ['R005', 'R048', 'R076', 'R094', 'R202', 'R204', 'R206', 'R209', 'R301', 'R305'],
+                4: ['R003'],
             }
         }
-
+        
         self.target_list = self.patient_dict[self.state][self.fold]
         self.load_data()
 

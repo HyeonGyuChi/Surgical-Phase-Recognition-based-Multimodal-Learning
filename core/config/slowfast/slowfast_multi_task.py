@@ -44,7 +44,8 @@ model = dict(
             ],
             no_of_classes=[3, 13, 7, 7])),
     train_cfg = None,
-    test_cfg = dict(average_clips='prob'))
+    # test_cfg = dict(average_clips='prob'))
+    test_cfg = dict(average_clips=None))
 
 dataset_type = 'RawframeDataset'
 data_root = '/raid/datasets/public/PETRAW/'

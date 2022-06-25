@@ -28,12 +28,12 @@ model = dict(
             pool1_stride_t=1,
             norm_eval=False)),
     cls_head=dict(
-        type='SlowFastHead',
+        type='MultiTaskHead',
         in_channels=2304,  # 2048+256
-        num_classes=27,
+        num_classes=[27],
         spatial_type='avg',
         dropout_ratio=0.5,
-        multi_task=False,
+        multi_task=True,
         loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
         # loss_cls=dict(type='CBLoss', loss_weight=1.0, 
         #     samples_per_cls=[
@@ -41,7 +41,7 @@ model = dict(
         #     ],
         #     no_of_classes=[27])),
     train_cfg = None,
-    test_cfg = dict(average_clips='prob'))
+    test_cfg = dict(average_clips=None))
 
 dataset_type = 'RawframeDataset'
 data_root = '/raid/datasets/public/PETRAW/'

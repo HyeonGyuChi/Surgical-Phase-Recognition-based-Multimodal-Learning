@@ -118,22 +118,25 @@ class PETRAWDataset(torch.utils.data.Dataset):
         file_list = os.listdir(target_path)
         file_list = natsort.natsorted(file_list)
         
-        f_len = len(file_list)
-        split = f_len // 5
+        for target in range(len(file_list)):
+            self.target_list.append(file_list[target][:-4]) # split [.jpg, .png]
+
+        # f_len = len(file_list)
+        # split = f_len // 5
         
-        st = 0 + (val_index-1) * split # fold1=[0:29] // 29ea => 1~29 case
-        ed = 0 + val_index * split
-        if val_index == 5: # fold5=[116:149] // 33ea
-            ed = f_len
+        # st = 0 + (val_index-1) * split # fold1=[0:29] // 29ea => 1~29 case
+        # ed = 0 + val_index * split
+        # if val_index == 5: # fold5=[116:149] // 33ea
+        #     ed = f_len
         
-        if self.state == 'train':
-            for target in range(f_len):
-                if not (st <= target and target < ed):
-                    self.target_list.append(file_list[target][:-4]) # split [.jpg, .png]
-        else:
-            for target in range(f_len):
-                if (st <= target and target < ed):
-                    self.target_list.append(file_list[target][:-4])
+        # if self.state == 'train':
+        #     for target in range(f_len):
+        #         if not (st <= target and target < ed):
+        #             self.target_list.append(file_list[target][:-4]) # split [.jpg, .png]
+        # else:
+        #     for target in range(f_len):
+        #         if (st <= target and target < ed):
+        #             self.target_list.append(file_list[target][:-4])
 
     def load_data(self):
         # load specific data
@@ -235,7 +238,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         
         if go_subsample:
             for key, _data in self.data_dict.items():
-                if key == 'kinematic': # pass subsampling on ski
+                if 'ski' in self.args.data_type and key == 'kinematic': # pass subsampling on ski
                     print('\t ---> pass subsampling on kinematic')
                     for dir_name in _data.keys():
                         self.data_dict[key][dir_name] = _data[dir_name][:]
