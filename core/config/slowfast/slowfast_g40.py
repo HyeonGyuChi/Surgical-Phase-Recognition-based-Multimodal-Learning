@@ -34,12 +34,14 @@ model = dict(
         # spatial_type='avg',
         # dropout_ratio=0.5,
         # multi_task=False,
+
         type='MultiTaskHead',
         in_channels=2304,  # 2048+256
         num_classes=[27],
         spatial_type='avg',
         dropout_ratio=0.5,
         multi_task=True,
+
         loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
         # loss_cls=dict(type='CBLoss', loss_weight=1.0, 
         #     samples_per_cls=[

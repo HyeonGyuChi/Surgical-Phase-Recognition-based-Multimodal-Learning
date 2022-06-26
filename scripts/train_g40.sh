@@ -7,6 +7,8 @@ CUDA_VISIBLE_DEVICES=4,5,6,7 python main.py --num_gpus 4 \
                         --data_base_path '/dataset3/multimodal' \
                         --data_type 'vd' --optimizer 'adam' \
                         --lr_scheduler 'cosine_lr' \
-                        --loss_fn 'ce' \
-                        --fold 4 \
+                        --loss_fn 'cb' \
+                        --target_metric 'Balance-Acc' \
+                        --inference_per_frame \
+                        --fold 1 \
                         --max_epoch 100
