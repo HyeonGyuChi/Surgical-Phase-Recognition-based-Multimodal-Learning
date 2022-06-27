@@ -18,7 +18,7 @@ def parse_opts():
             help='If true, load pretrained backbone')
 
     parser.add_argument('--loss_fn',
-            default='ce',
+            default='cb',
             type=str,
             # choices=['ce', 'focal'],
             help='Select loss_fn to train/test')
@@ -33,7 +33,7 @@ def parse_opts():
             help='input sample size')
 
     parser.add_argument('--batch_size',
-            default=2,
+            default=256,
             type=int,
             help='Training/Testing batch size')
     
@@ -163,12 +163,12 @@ def parse_opts():
     parser.add_argument('--data_type',
             default=['vd'],
             nargs='+',
-            help='kinematic(ki), video(vd), other modality')
+            help='kinematic(ki), video(vd), mask(mk), seg-kinematic(ski) other modality')
 
     parser.add_argument('--task',
             default='all',
             type=str,
-            help='Data location')
+            help='Data location, phase, step, action, all')
 
     parser.add_argument('--subsample_ratio',
             default=6,
