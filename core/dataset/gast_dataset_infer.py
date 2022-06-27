@@ -11,7 +11,7 @@ from numpy import array
 from core.utils.augmentor import Augmentor#, SignalAugmentor
 
 
-class GastrectomyDataset(torch.utils.data.Dataset):
+class InferGastrectomyDataset(torch.utils.data.Dataset):
     def __init__(self, args, state='train'):
         self.args = args
         self.state = state
@@ -28,6 +28,7 @@ class GastrectomyDataset(torch.utils.data.Dataset):
                 'R117', 'R201', 'R202', 'R203', 'R204', 
                 'R205', 'R206', 'R207', 'R209', 'R210', 
                 'R301', 'R302', 'R304', 'R305', 'R313'],
+                # 1: ['R001',],
                 2: ['R002', 'R003', 'R004', 'R005', 'R006', 
                 'R013', 'R014', 'R015', 'R017', 'R018', 
                 'R022', 'R048', 'R076', 'R084', 'R094', 
@@ -40,24 +41,24 @@ class GastrectomyDataset(torch.utils.data.Dataset):
                 'R074', 'R084', 'R100', 'R116', 'R117', 
                 'R201', 'R203', 'R205', 'R207', 'R208', 
                 'R210', 'R302', 'R303', 'R304', 'R313'],
-                4: ['R001'],
             },
 
             'valid': {
                 1: ['R003', 'R004', 'R006', 'R013', 'R017', 'R018', 'R022', 'R116', 'R208', 'R303'],
+                # 1: ['R003',],
                 2: ['R001', 'R007', 'R010', 'R019', 'R056', 'R074', 'R100', 'R117', 'R203', 'R304'],
                 3: ['R005', 'R048', 'R076', 'R094', 'R202', 'R204', 'R206', 'R209', 'R301', 'R305'],
-                4: ['R003'],
             }
         }
-        
+
         self.target_list = self.patient_dict[self.state][self.fold]
         self.load_data()
 
         if self.state == 'train':
-            self.aug = Augmentor(self.args.augmentations)
+            self.aug = Augmentor(self.args.infer_augmentations)
+            # self.aug = Augmentor(self.args.augmentations)
         elif self.state == 'valid':
-            self.aug = Augmentor(self.args.val_augmentations)
+            self.aug = Augmentor(self.args.infer_augmentations)
 
     def __len__(self):
         return len(self.labels)
@@ -67,43 +68,21 @@ class GastrectomyDataset(torch.utils.data.Dataset):
         
         for dtype in self.data_dict.keys():
             if dtype == 'video':
-                vpath_list = self.data_dict[dtype][index]
+                vpath = self.data_dict[dtype][index]
                 X = []
-                for vpath in vpath_list:
-                    img = Image.open(vpath) # h, w, ch
-                    X.append(img)
-                    # img = cv2.imread(vpath) # h, w, ch
-                    # X.append(img[:,:,::-1])
-
-                X = self.aug(X)
+                img = Image.open(vpath) # h, w, ch
+                X = self.aug(img)
                 
                 X = torch.stack([torch.Tensor(_X) for _X in X], dim=0)                
-                
-                if self.args.model == 'slowfast':
-                    X = X.permute(1, 0, 2, 3).unsqueeze(0)
-                else:
-                    X = X.permute(1, 0, 2, 3)
+                X = X.permute(2, 0, 1)
+                # X = X.permute(1, 0, 2, 3).unsqueeze(0)
+                # X = X.permute(1, 0, 2, 3)
 
                 data[dtype] = X
-            elif dtype == 'mask':
-                vpath_list = self.data_dict[dtype][index]
-
-                X = []
-                for vpath in vpath_list:
-                    # img = Image.open(vpath) # h, w, ch
-                    img = np.load(vpath)['arr_0']
-                    X.append(img)
-                    
-                X = torch.stack([torch.Tensor(_X.copy()) for _X in X], dim=0)
-                
-                data[dtype] = X
-            elif dtype == 'kinematic':
-                signal = self.data_dict[dtype][index]
-                data[dtype] = torch.from_numpy(np.array(signal)).float()
 
         labels = torch.from_numpy(np.array(self.labels[index])).long()
 
-        return data, labels
+        return vpath, data, labels
 
     def load_data(self):
         # load specific data
@@ -122,18 +101,6 @@ class GastrectomyDataset(torch.utils.data.Dataset):
             self.load_video()
             print('[-] Load Video data ... done')
 
-        # load segmentation mask
-        # if 'mk' in self.args.data_type:
-        #     print('[+] Load mask data')
-        #     self.load_masks()
-        #     print('[-] Load mask data ... done')
-    
-        # load seg-kinematics
-        # if 'ski' in self.args.data_type:
-        #     print('[+] Load seg-kinematic data')
-        #     self.load_seg_kinematics()
-        #     print('[-] Load seg-kinematic data ... done')
-        
         print('[-] Load data ..... done')
 
         # data subsampling and others
@@ -184,34 +151,6 @@ class GastrectomyDataset(torch.utils.data.Dataset):
 
                 # print(key_val, len(t_frame_list), len(t_label_list))
 
-    def load_masks(self):
-        a = '/gastrectomy-40'
-        pass
-
-    def load_seg_kinematics(self):
-        """
-            4 variables (30Hz)
-            position : x, y (left, right)
-        """
-        self.data_dict['kinematic'] = {}
-
-        target_path = self.data_path + '/Seg_kine7'
-        file_list = glob(target_path + '/*.pkl')
-        file_list = natsort.natsorted(file_list)
-
-        for fpath in file_list:
-            key_val = fpath.split('/')[-1].split('_')[0]
-            
-            if key_val in self.target_list:
-                with open(fpath, 'rb') as f:
-                    data = pickle.load(f)
-                    
-                # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:4])
-                # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:8])
-                # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :8]), data[:, 8:10]), 1)
-                self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :8]), data[:, 8:]), 1)
-                # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :4]), data[:, 8:]), 1)
-                
     def load_labels(self):
         self.labels = {}
         
@@ -292,11 +231,6 @@ class GastrectomyDataset(torch.utils.data.Dataset):
             for dir_name in self.labels.keys():
                 self.labels[dir_name] = self.labels[dir_name][::sample_rate]
 
-        # overlapping data sequence
-        # if self.state != 'train':
-        #     stride = int(seq_size)
-        # else:
-        #     stride = int(seq_size * self.args.overlap_ratio)
         stride = 1
 
         hf_seq = self.args.clip_size // 2
@@ -307,38 +241,7 @@ class GastrectomyDataset(torch.utils.data.Dataset):
             for dir_name in _data.keys():
                 d_len = len(_data[dir_name])
                 
-                for st in range(0, d_len, stride):
-                    if st-hf_seq < 0:
-                        diff = hf_seq-st
-
-                        if key == 'video':
-                            seq = [_data[dir_name][0] for _ in range(diff)] + _data[dir_name][st:st+(self.args.clip_size-diff)]
-
-                            # print(seq)
-                        else:
-                            pad = np.zeros((diff, *_data[dir_name][0].shape))
-
-                            seq = np.concatenate((pad, _data[dir_name][st:st+(self.args.clip_size-diff)]), 0)
-                        seq_data.append(seq)
-
-                    elif st+hf_seq >= d_len:
-                        diff = st+hf_seq-d_len
-
-                        if key == 'video':
-                            seq = _data[dir_name][st-hf_seq:] + [_data[dir_name][-1] for _ in range(diff)]
-                        else:
-                            pad = np.zeros((diff, *_data[dir_name][-1].shape))
-
-                            seq = np.concatenate((_data[dir_name][st-hf_seq:], pad), 0)
-                        seq_data.append(seq)
-
-                    else:
-                        seq_data.append(_data[dir_name][st-hf_seq:st+hf_seq])
-
-                    # if seq_data[-1].shape[0] != 8:
-                        # print(dir_name, st, seq_data[-1].shape)
-                    if len(seq_data[-1]) != 8:
-                        print(dir_name, st, len(seq_data[-1]))
+                seq_data += _data[dir_name]
 
             self.data_dict[key] = array(seq_data)
 
@@ -348,8 +251,8 @@ class GastrectomyDataset(torch.utils.data.Dataset):
             data = self.labels[d_num]
             d_len = len(data)
 
-            for st in range(0, d_len, stride):
-                seq_data.append(data[st:st+1])
+            for st in range(0, d_len,):
+                seq_data.append(data[st])
 
         self.labels = array(seq_data)
 

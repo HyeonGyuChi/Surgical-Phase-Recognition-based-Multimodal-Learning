@@ -34,6 +34,7 @@ class Trainer():
 
         # Load dataset
         print('======= Load Dataset =======')
+
         self.train_loader, self.val_loader, ski_feature_num = get_dataset(self.args) # @HG modify
 
         # lstm feature 개수변경 (for variaty of ski_method)
@@ -213,7 +214,7 @@ class Trainer():
                 for k in x.keys():
                     x[k] = x[k].to(self.args.device)
                 y = y.to(self.args.device)
-                
+            
             y_hat, loss = self.forward(x, y)
             
             self.metric_helper.write_loss(loss.item(), 'valid')
@@ -291,14 +292,24 @@ class Trainer():
             for ti in range(len(self.n_class_list)):
                 # for seq in range(y.shape[1]):
                     # loss += self.loss_fn(y_hat[ti][:, seq, ], y[:, seq, ti])
-                loss += self.loss_fn(y_hat[ti][:, ], y[:, 0, ti])
+                if len(y.shape) == 3:
+                    loss += self.loss_fn(y_hat[ti], y[:, 0, ti])
+                else:
+                    loss += self.loss_fn(y_hat, y[:, ti])
+
                 loss_div_cnt += 1
 
         else: # cb, bs, eqlv2
             for ti in range(len(self.n_class_list)):
                 # for seq in range(y.shape[1]):
                     # loss += self.loss_fn[ti](y_hat[ti][:, seq, :], y[:, seq, ti])
-                loss += self.loss_fn[ti](y_hat[ti][:, :], y[:, 0, ti])
+                
+                # print(self.n_class_list, len(y_hat), y_hat[0].shape, y.shape, len(self.loss_fn))
+                if len(y.shape) == 3:
+                    loss += self.loss_fn[ti](y_hat[ti], y[:, 0, ti])
+                else:
+                    loss += self.loss_fn[ti](y_hat, y[:, 0])
+
                 loss_div_cnt += 1
                     
             if self.args.use_normsoftmax:

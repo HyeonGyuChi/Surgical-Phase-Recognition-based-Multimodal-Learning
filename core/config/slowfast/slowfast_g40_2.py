@@ -3,12 +3,12 @@ model = dict(
     backbone=dict(
         type='ResNet3dSlowFast',
         pretrained=None,
-        resample_rate=2,  # tau
-        speed_ratio=2,  # alpha
+        resample_rate=4,  # tau
+        speed_ratio=4,  # alpha
         channel_ratio=8,  # beta_inv
         slow_pathway=dict(
             type='resnet3d',
-            depth=50,
+            depth=101,
             pretrained=None,
             lateral=True,
             conv1_kernel=(1, 7, 7),
@@ -19,7 +19,7 @@ model = dict(
             norm_eval=False),
         fast_pathway=dict(
             type='resnet3d',
-            depth=50,
+            depth=101,
             pretrained=None,
             lateral=False,
             base_channels=8,
@@ -30,21 +30,17 @@ model = dict(
     cls_head=dict(
         type='MultiTaskHead',
         in_channels=2304,  # 2048+256
-        num_classes=[3,13,7,7],
+        num_classes=[27],
         spatial_type='avg',
         dropout_ratio=0.5,
         multi_task=True,
-        # loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
-        loss_cls=dict(type='CBLoss', loss_weight=1.0, 
-            samples_per_cls=[
-                [1] * 3,
-                [1] * 13,
-                [154292, 26405, 6034, 15333, 76558, 10274, 1648],
-                [159187, 22992, 4743, 14319, 76749, 10913, 1641],
-            ],
-            no_of_classes=[3, 13, 7, 7])),
+        loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
+        # loss_cls=dict(type='CBLoss', loss_weight=1.0, 
+        #     samples_per_cls=[
+        #         [154292, 26405, 6034, 15333, 76558, 10274, 1648],
+        #     ],
+        #     no_of_classes=[27])),
     train_cfg = None,
-    # test_cfg = dict(average_clips='prob'))
     test_cfg = dict(average_clips=None))
 
 dataset_type = 'RawframeDataset'

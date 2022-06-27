@@ -3,12 +3,12 @@ model = dict(
     backbone=dict(
         type='ResNet3dSlowFast',
         pretrained=None,
-        resample_rate=2,  # tau
-        speed_ratio=2,  # alpha
+        resample_rate=4,  # tau
+        speed_ratio=4,  # alpha
         channel_ratio=8,  # beta_inv
         slow_pathway=dict(
             type='resnet3d',
-            depth=50,
+            depth=101,
             pretrained=None,
             lateral=True,
             conv1_kernel=(1, 7, 7),
@@ -19,7 +19,7 @@ model = dict(
             norm_eval=False),
         fast_pathway=dict(
             type='resnet3d',
-            depth=50,
+            depth=101,
             pretrained=None,
             lateral=False,
             base_channels=8,
@@ -44,8 +44,7 @@ model = dict(
             ],
             no_of_classes=[3, 13, 7, 7])),
     train_cfg = None,
-    # test_cfg = dict(average_clips='prob'))
-    test_cfg = dict(average_clips=None))
+    test_cfg = dict(average_clips='prob'))
 
 dataset_type = 'RawframeDataset'
 data_root = '/raid/datasets/public/PETRAW/'

@@ -28,23 +28,27 @@ model = dict(
             pool1_stride_t=1,
             norm_eval=False)),
     cls_head=dict(
+        # type='SlowFastHead',
+        # in_channels=2304,  # 2048+256
+        # num_classes=27,
+        # spatial_type='avg',
+        # dropout_ratio=0.5,
+        # multi_task=False,
+
         type='MultiTaskHead',
         in_channels=2304,  # 2048+256
-        num_classes=[3,13,7,7],
+        num_classes=[27],
         spatial_type='avg',
         dropout_ratio=0.5,
         multi_task=True,
-        # loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
-        loss_cls=dict(type='CBLoss', loss_weight=1.0, 
-            samples_per_cls=[
-                [1] * 3,
-                [1] * 13,
-                [154292, 26405, 6034, 15333, 76558, 10274, 1648],
-                [159187, 22992, 4743, 14319, 76749, 10913, 1641],
-            ],
-            no_of_classes=[3, 13, 7, 7])),
+
+        loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
+        # loss_cls=dict(type='CBLoss', loss_weight=1.0, 
+        #     samples_per_cls=[
+        #         [154292, 26405, 6034, 15333, 76558, 10274, 1648],
+        #     ],
+        #     no_of_classes=[27])),
     train_cfg = None,
-    # test_cfg = dict(average_clips='prob'))
     test_cfg = dict(average_clips=None))
 
 dataset_type = 'RawframeDataset'
