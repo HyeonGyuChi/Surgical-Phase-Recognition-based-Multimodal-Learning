@@ -21,8 +21,6 @@ class PETRAWDataset(torch.utils.data.Dataset):
         self.data_path = args.data_base_path + '/PETRAW'
         self.task = args.task
 
-        self.num_of_ski_feature = 0
-
         self.name_to_phase = { # 3
             'Idle': 0,
             'Transfer Left to Right': 1,
@@ -311,7 +309,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
         """
         self.data_dict['video'] = {}
 
-        target_path = self.data_path + '/Video'
+        target_path = self.data_path + '/Img'
         file_list = glob(target_path + '/*')
         file_list = natsort.natsorted(file_list)
 
@@ -406,7 +404,7 @@ class PETRAWDataset(torch.utils.data.Dataset):
                 data = data.to_numpy() # df to np
 
                 self.data_dict['kinematic'][key_val] = data # no more standradization
-                self.num_of_ski_feature = data.shape[1] # num of feature 
+                setattr(self, 'num_of_ski_feature', data.shape[1]) # set num of feature 
 
                 # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:4])
                 # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:8])
