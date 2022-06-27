@@ -128,7 +128,7 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
-        self.linear_dim = 512
+        self.linear_dim = 2048 # HG modify 
 
         self.linear = torch.nn.Linear(self.linear_dim, self.linear_dim)
 
@@ -143,6 +143,8 @@ class ResNet(nn.Module):
             self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class).to(self.device))
             # self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class).cuda())
             # self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class * self.seq_size).to(self.device))
+        
+        self.classifiers = nn.ModuleList(self.classifiers) # @HG.modifty: for ddp
             
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
@@ -204,7 +206,8 @@ class ResNet(nn.Module):
         x = self.layer4(x)
         x = self.avgpool(x)
 
-        x = x.view(x.size(0), -1)
+        
+        x = x.view(x.size(0), -1) # resnet 50, 101 = [2, 2048]
         # x = self.linear(x)
 
         return x
@@ -214,7 +217,7 @@ class ResNet(nn.Module):
                 
         outputs = []
         
-        for ci in range(len(self.classifiers)):
+        for ci in range(len(self.classifiers)): # 512 -> [3,13,7,7]
             x = self.classifiers[ci](feat)
             # x = x.view(feat.size(0), self.seq_size, -1)
 
