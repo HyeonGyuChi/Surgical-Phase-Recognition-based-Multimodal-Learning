@@ -54,6 +54,7 @@ class Trainer():
         
         # multi-task classifier setup
         if hasattr(self.model, 'set_classifiers'):
+            print('set classifiers')
             self.model.set_classifiers(self.n_class_list)
 
         self.args.n_class_list = self.n_class_list
@@ -201,6 +202,8 @@ class Trainer():
             
             loss.backward()
             self.optimizer.step()
+
+            # break
             
         self.metric_helper.update_loss('train')
     
@@ -308,6 +311,9 @@ class Trainer():
                 if len(y.shape) == 3:
                     loss += self.loss_fn[ti](y_hat[ti], y[:, 0, ti])
                 else:
+                    if isinstance(y_hat, list):
+                        y_hat = y_hat[0]
+
                     loss += self.loss_fn[ti](y_hat, y[:, 0])
 
                 loss_div_cnt += 1

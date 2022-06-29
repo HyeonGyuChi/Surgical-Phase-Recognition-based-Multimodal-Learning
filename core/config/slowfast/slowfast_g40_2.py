@@ -1,5 +1,6 @@
 model = dict(
     type='Recognizer3D',
+    pretrained=None,
     backbone=dict(
         type='ResNet3dSlowFast',
         pretrained=None,
@@ -153,7 +154,7 @@ work_dir = '/code/multimodal/logs/multi_task_test5'
 # load_from = 'https://download.openmmlab.com/mmaction/recognition/slowfast/slowfast_r152_4x16x1_256e_kinetics400_rgb/slowfast_r152_4x16x1_256e_kinetics400_rgb_20210122-bdeb6b87.pth'
 # load_from = '/raid/pretrained_models/mmaction2/slowfast_r50_256p_8x8x1_256e_kinetics400_rgb_20200810-863812c2.pth'
 
-load_from = None
+load_from = 'https://download.openmmlab.com/mmaction/recognition/slowfast/slowfast_r101_8x8x1_256e_kinetics400_rgb/slowfast_r101_8x8x1_256e_kinetics400_rgb_20210218-0dd54025.pth'
 resume_from = None
 find_unused_parameters = False
 workflow = [('train', 1)]

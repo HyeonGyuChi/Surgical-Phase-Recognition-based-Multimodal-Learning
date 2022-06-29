@@ -101,12 +101,13 @@ class MetricHelper():
                 'Jaccard': [cm.J[cls_name] for cls_name in cm.classes],
                 'Balance-Acc': bal_acc,
                 'Percentage-Acc': p_acc,
+                'Total_P-Acc': sum(p_acc),
                 'AUROC': auroc_mean,
             }
 
             if len(self.loss_dict['valid']) > 0:
                 metrics['val_loss'] = self.loss_dict['valid'][-1]
-                
+        
             # exception
             for k, v in metrics.items():
                 if isinstance(v, list):
@@ -177,10 +178,42 @@ class MetricHelper():
         return False
         
     def save_results(self):
+        if self.args.dataset == 'petraw':
+            self.save_petraw_results()
+
+        elif self.args.dataset == 'gast':
+            self.save_gast_results()
+
+
+    def save_petraw_results(self):
         cols = ['Balance-Acc' + f"_{i}" for i in range(self.results.shape[-1])] + ['Acc' + f"_{i}" for i in range(self.results2.shape[-1])]
         save_path = self.args.save_path + '/result_{}.csv'.format(self.args.model)
         
         data = [*list(self.results[self.epoch-1, :]), *list(self.results2[self.epoch-1, :])]
+
+        if os.path.exists(save_path):
+            df = pd.read_csv(save_path)
+            print('Existed file loaded')
+            
+            new_df = pd.Series(data, index=cols)
+            df = df.append(new_df, ignore_index=True)
+            print('New line added')
+            
+        else:
+            print('New file generated!')
+            df = pd.DataFrame([data],
+                        columns=cols
+                        ) 
+
+        df.to_csv(save_path, 
+                index=False,
+                float_format='%.4f')
+    
+    def save_gast_results(self):
+        cols = ['Acc' + f"_{i}" for i in range(self.results2.shape[-1])]
+        save_path = self.args.save_path + '/result_{}.csv'.format(self.args.model)
+        
+        data = [*list(self.results2[self.epoch-1, :])]
 
         if os.path.exists(save_path):
             df = pd.read_csv(save_path)

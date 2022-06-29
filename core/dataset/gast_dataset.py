@@ -147,7 +147,7 @@ class GastrectomyDataset(torch.utils.data.Dataset):
         """
         self.data_dict['video'] = {}
 
-        target_path = self.data_path + '/gastric/os_frames'
+        target_path = self.data_path + '/gastric/imgs'
         # patient_list = glob(target_path + '/*')
         patient_list = os.listdir(target_path)
         patient_list = natsort.natsorted(patient_list)
@@ -172,6 +172,10 @@ class GastrectomyDataset(torch.utils.data.Dataset):
                             frame_list = glob(fpath + '/*.jpg')
                             frame_list = natsort.natsorted(frame_list)
 
+                            min_len = min(len(frame_list), len(self.labels[key_val][ch]))
+                            frame_list = frame_list[:min_len]
+                            self.labels[key_val][ch] = self.labels[key_val][ch][:min_len]
+                            
                             if len(t_frame_list) == 0:
                                 t_frame_list = frame_list
                                 t_label_list = self.labels[key_val][ch]

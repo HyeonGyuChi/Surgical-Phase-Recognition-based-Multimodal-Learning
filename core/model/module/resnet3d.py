@@ -88,7 +88,6 @@ class Bottleneck(nn.Module):
         return out
 
 class ResNet(nn.Module):
-
     def __init__(self, 
                  block,
                  layers,
@@ -128,7 +127,9 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool3d(kernel_size=3, stride=2, padding=1)
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
-        self.linear_dim = 2048 # HG modify 
+        # self.linear_dim = block_inplanes[3] # HG modify 
+        # if self.args.model_depth == 101:
+        self.linear_dim = 2048
 
         self.linear = torch.nn.Linear(self.linear_dim, self.linear_dim)
 
@@ -145,7 +146,7 @@ class ResNet(nn.Module):
             # self.classifiers.append(torch.nn.Linear(self.linear_dim, n_class * self.seq_size).to(self.device))
         
         self.classifiers = nn.ModuleList(self.classifiers) # @HG.modifty: for ddp
-            
+        
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
                 nn.init.kaiming_normal_(m.weight,
