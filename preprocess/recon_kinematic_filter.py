@@ -1,5 +1,5 @@
 # load exact visual kinematic featrue from recon kinematic set
-from preprocess.recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method
+from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method
 import pandas as pd
 import pickle
 
@@ -13,7 +13,7 @@ class recon_kinematic_filter():
     def filtering(self, methods, extract_objs, extract_pairs):
         columns = [] # parse columns from recon_df
 
-        obj_key, obj_to_color = get_bbox_obj_info(get_bbox_loader(self.task, target_path='', dsize='', sample_rate='')) # dummy (target_path, dsize, sample_rate)
+        obj_key, obj_to_color = get_bbox_obj_info(get_bbox_loader(self.task, target_path='', dsize='', sample_interval='')) # dummy (target_path, dsize, sample_interval)
         
         # print('\n[+] \tsetting filter columns ... \n\tmethod : {} \n\textract_objs : {} ==> {}\n'.format(methods, extract_objs, extract_pairs))
         # base
