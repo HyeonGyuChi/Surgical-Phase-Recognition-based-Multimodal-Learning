@@ -103,7 +103,7 @@ class recon_kinematic():
         print('\n[+] \t single reconstruct ... {}'.format(extract_objs))
 
         single_methods = [m for m in methods if m in ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity']]
-        pair_methods = [m for m in methods if m in ['IoU', 'gIoU']]
+        pair_methods = [m for m in methods if m in ['IoU', 'gIoU', 'dIoU', 'cIoU']]
         
         print('single method: ', single_methods)
 
@@ -162,7 +162,7 @@ class recon_kinematic():
         print('pair methods: ', pair_methods)
 
         # recon pair value
-        for method in pair_methods: # ['IoU', 'gIoU']
+        for method in pair_methods: # ['IoU', 'gIoU', 'dIoU', 'cIoU']
             for src_obj, target_obj in extract_pairs: # ('Grasper', 'Grasper'), ('Grasper', 'Blocks') .. 
                 for i, src_start_idx in enumerate(entities_start_ids[src_obj]): # src per entiity
                     if src_obj == target_obj and i > 0 : break  # same obj, calc only one time
@@ -181,7 +181,8 @@ class recon_kinematic():
                         target_np = entities_np[:, target_start_idx: target_start_idx + len(entity_col)] # entitiy bbox info
                     
                         # calc from single rows : apply method from frame by frame
-                        if method in ['IoU', 'gIoU']:
+                        if method in ['IoU', 'gIoU', 'dIoU', 'cIoU']:
+                            print(method)
                             for f_idx in range(src_np.shape[0]):
                                 result = recon_method(src_np[f_idx, :], target_np[f_idx, :]) # pair numpy input
                                 kine_results.append(result)
@@ -221,7 +222,7 @@ if __name__ == "__main__":
 
     data_root_path = base_path + '/PETRAW/Training'
     target_root_path = data_root_path + '/Segmentation'
-    save_root_path = data_root_path + '/Seg_kine12'
+    save_root_path = data_root_path + '/Seg_kine13'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
     
@@ -233,7 +234,7 @@ if __name__ == "__main__":
     extract_objs = ['Grasper']
     extract_pairs = [('Grasper', 'Grasper')]
 
-    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU']
+    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU', 'dIoU', 'cIoU']
     
     for key_val in file_list:
         target_path = target_root_path + '/{}'.format(key_val)

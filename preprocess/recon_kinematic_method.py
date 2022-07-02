@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view # over version 1.20.0
+import math
 
 EXCEPTION_NUM = -1000000
 
@@ -11,7 +12,7 @@ def is_exception(*argv):
 
     return False
 
-
+# for partial
 def get_slide_window(nps, window_size = 8):
     d_len = nps.shape[0] # only 1 dim numpy
 
@@ -29,6 +30,26 @@ def get_slide_window(nps, window_size = 8):
     window_nps = sliding_window_view(pad_nps, window_size)
 
     return window_nps # 2 dim (obj,window_size)
+
+# for IoU series func
+def outerbox(src_bbox_np, target_bbox_np):
+
+    src_x_min, src_x_max, src_y_min, src_y_max = src_bbox_np[0], src_bbox_np[1], src_bbox_np[2], src_bbox_np[3]
+    target_x_min, target_x_max, target_y_min, target_y_max = target_bbox_np[0], target_bbox_np[1], target_bbox_np[2], target_bbox_np[3]
+
+    x_min = src_x_min if src_x_min < target_x_min else target_x_min
+    x_max = src_x_max if src_x_max < target_x_max else target_x_max
+    y_min = src_y_min if src_y_min < target_y_min else target_y_min
+    y_max = src_y_max if src_y_max < target_y_max else target_y_max
+
+    return x_min, x_max, y_min, y_max
+
+# for IoU series func
+def euclidean_distance(p1, p2):
+    x1, y1 = p1
+    x2, y2 = p2
+    
+    return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
 
 def get_centroid(bbox_np): # (x min, x max, y min, y max)    
@@ -242,7 +263,7 @@ def get_IoU(src_bbox_np, target_bbox_np, return_U=False): # (x min, x max, y min
         h = max(0, y_max - y_min + 1)
 
         inter = w * h
-        U = src_area + target_area - inter
+        U = src_area + target_area - inter + 1e-6 # error term 
         IoU = inter / U
 
     if return_U :
@@ -263,16 +284,69 @@ def get_gIoU(src_bbox_np, target_bbox_np): # (x min, x max, y min, y max) / (x m
     if not is_exception(src_x_min, src_x_max, src_y_min, src_y_max) and \
             not is_exception(target_x_min, target_x_max, target_y_min, target_y_max):   
 
-        # x min, max, y min, max
-        x_min = src_x_min if src_x_min < target_x_min else target_x_min
-        x_max = src_x_max if src_x_max < target_x_max else target_x_max
-        y_min = src_y_min if src_y_min < target_y_min else target_y_min
-        y_max = src_y_max if src_y_max < target_y_max else target_y_max
+        # outerbox : x min, max, y min, max
+        outer_x_min, outer_x_max, outer_y_min, outer_y_max = outerbox(src_bbox_np, target_bbox_np)
 
-        C = (x_max - x_min + 1) * (y_max - y_min + 1)
+        C = (outer_x_max - outer_x_min + 1) * (outer_y_max - outer_y_min + 1)
 
         IoU, U = get_IoU(src_bbox_np, target_bbox_np, return_U=True)
 
         gIoU = np.array([IoU - (C-U) / C])
 
     return gIoU
+
+def get_dIoU(src_bbox_np, target_bbox_np): # (x min, x max, y min, y max) / (x min, x max, y min, y max)
+    # https://cxybb.com/article/m0_53114462/117398110
+    dIoU = np.array([EXCEPTION_NUM])
+
+    src_x_min, src_x_max, src_y_min, src_y_max = src_bbox_np[0], src_bbox_np[1], src_bbox_np[2], src_bbox_np[3]
+    target_x_min, target_x_max, target_y_min, target_y_max = target_bbox_np[0], target_bbox_np[1], target_bbox_np[2], target_bbox_np[3]
+
+    if not is_exception(src_x_min, src_x_max, src_y_min, src_y_max) and \
+            not is_exception(target_x_min, target_x_max, target_y_min, target_y_max):   
+        
+        # centroid
+        src_cen_x, src_cen_y = get_centroid(src_bbox_np)
+        target_cen_x, target_cen_y = get_centroid(target_bbox_np)
+
+        # outerbox : x min, max, y min, max
+        outer_x_min, outer_x_max, outer_y_min, outer_y_max = outerbox(src_bbox_np, target_bbox_np)
+
+        # euclidan
+        d = euclidean_distance((src_cen_x, src_cen_y), (target_cen_x, target_cen_y))
+        c = euclidean_distance((outer_x_min, outer_y_min), (outer_x_max, outer_y_max))
+
+        # IoU
+        IoU = get_IoU(src_bbox_np, target_bbox_np)
+
+        dIoU = IoU - (d ** 2) / (c ** 2)
+    
+    return dIoU
+
+def get_cIoU(src_bbox_np, target_bbox_np): # (x min, x max, y min, y max) / (x min, x max, y min, y max)
+    # https://cxybb.com/article/m0_53114462/117398110
+    cIoU = np.array([EXCEPTION_NUM])
+
+    src_x_min, src_x_max, src_y_min, src_y_max = src_bbox_np[0], src_bbox_np[1], src_bbox_np[2], src_bbox_np[3]
+    target_x_min, target_x_max, target_y_min, target_y_max = target_bbox_np[0], target_bbox_np[1], target_bbox_np[2], target_bbox_np[3]
+
+    if not is_exception(src_x_min, src_x_max, src_y_min, src_y_max) and \
+            not is_exception(target_x_min, target_x_max, target_y_min, target_y_max):   
+
+        src_w, src_h = src_x_max - src_x_min + 1, src_y_max - src_y_min + 1
+        target_w, target_h = target_x_max - target_x_min + 1, target_y_max - target_y_min + 1
+
+        # aspect ratio
+        v = 4 / (math.pi ** 2) * (math.atan(src_w / src_h) - math.atan(target_w/ target_h)) ** 2
+        
+        # IoU, dIoU
+        IoU = get_IoU(src_bbox_np, target_bbox_np)
+        dIoU = get_dIoU(src_bbox_np, target_bbox_np)
+
+        alpha = v / (1 - IoU + v)
+
+        cIoU = dIoU - alpha * v
+    
+    return cIoU
+
+    
