@@ -10,19 +10,20 @@ from itertools import combinations
 
 from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method, normalized_pixel, denormalized_pixel
 
-EXCEPTION_NUM = -1000000
+EXCEPTION_NUM = -999
 
 class recon_kinematic():
-    def __init__(self, target_path, save_path, sample_rate, dsize=(512, 512), task='PETRAW'):
+    def __init__(self, target_path, save_path, fps, sample_interval, dsize=(512, 512), task='PETRAW'):
         self.target_path = target_path
         self.save_path = save_path
 
         # hyper config
         self.dsize = dsize # w, h
-        self.sample_rate = sample_rate
+        self.sample_interval = sample_interval # sampling interval from segmentation imgs
+        self.fps = fps # for calc interval sec in [velocity, speed]
 
         # bbox dataloader setup
-        self.bbox_loader = get_bbox_loader(task, self.target_path, self.dsize, self.sample_rate)
+        self.bbox_loader = get_bbox_loader(task, self.target_path, self.dsize, self.sample_interval)
 
     def set_path(self, target_path, save_path):
         self.target_path, self.save_path = target_path, save_path
@@ -102,7 +103,7 @@ class recon_kinematic():
         print('\n[+] \t single reconstruct ... {}'.format(extract_objs))
 
         single_methods = [m for m in methods if m in ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity']]
-        pair_methods = [m for m in methods if m in ['IoU', 'gIoU']]
+        pair_methods = [m for m in methods if m in ['IoU', 'gIoU', 'dIoU', 'cIoU']]
         
         print('single method: ', single_methods)
 
@@ -129,11 +130,14 @@ class recon_kinematic():
                         kine_results = np.stack(kine_results) # list to np
                     
                     # calc from multiple rows : apply method from all frame
-                    if method in ['partial_pathlen', 'cumulate_pathlen']:
+                    if method in ['cumulate_pathlen']:
                         kine_results = recon_method(target_np)
+                    
+                    if method in ['partial_pathlen']:
+                        kine_results = recon_method(target_np, window_size=8)
 
                     if method in ['speed', 'velocity']:
-                        kine_results = recon_method(target_np, interval_sec=1/30)
+                        kine_results = recon_method(target_np, interval_sec= 1 / self.fps * 8)
 
                     # normalized 
                     if is_normalized:
@@ -158,7 +162,7 @@ class recon_kinematic():
         print('pair methods: ', pair_methods)
 
         # recon pair value
-        for method in pair_methods: # ['IoU', 'gIoU']
+        for method in pair_methods: # ['IoU', 'gIoU', 'dIoU', 'cIoU']
             for src_obj, target_obj in extract_pairs: # ('Grasper', 'Grasper'), ('Grasper', 'Blocks') .. 
                 for i, src_start_idx in enumerate(entities_start_ids[src_obj]): # src per entiity
                     if src_obj == target_obj and i > 0 : break  # same obj, calc only one time
@@ -177,7 +181,7 @@ class recon_kinematic():
                         target_np = entities_np[:, target_start_idx: target_start_idx + len(entity_col)] # entitiy bbox info
                     
                         # calc from single rows : apply method from frame by frame
-                        if method in ['IoU', 'gIoU']:
+                        if method in ['IoU', 'gIoU', 'dIoU', 'cIoU']:
                             for f_idx in range(src_np.shape[0]):
                                 result = recon_method(src_np[f_idx, :], target_np[f_idx, :]) # pair numpy input
                                 kine_results.append(result)
@@ -213,15 +217,15 @@ class recon_kinematic():
 
 if __name__ == "__main__":
 
-    base_path = '/dataset3/multimodal'
+    base_path = '/raid/multimodal'
 
     data_root_path = base_path + '/PETRAW/Training'
     target_root_path = data_root_path + '/Segmentation'
-    save_root_path = data_root_path + '/Seg_kine11-5fps'
+    save_root_path = data_root_path + '/Kinematic_segmentation'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
     
-    rk = recon_kinematic("", "", 6) # sample rate 6 (5fps)
+    rk = recon_kinematic("", "", fps=30, sample_interval=6) # sample rate 6 (5fps)
 
     # extract_objs = ['Grasper', 'Blocks']
     # extract_pairs = [('Grasper', 'Grasper'), ('Grasper', 'Blocks')]
@@ -229,7 +233,7 @@ if __name__ == "__main__":
     extract_objs = ['Grasper']
     extract_pairs = [('Grasper', 'Grasper')]
 
-    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU']
+    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU', 'dIoU', 'cIoU']
     
     for key_val in file_list:
         target_path = target_root_path + '/{}'.format(key_val)

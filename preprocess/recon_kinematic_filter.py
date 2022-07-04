@@ -1,5 +1,5 @@
 # load exact visual kinematic featrue from recon kinematic set
-from preprocess.recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method
+from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method
 import pandas as pd
 import pickle
 
@@ -13,7 +13,7 @@ class recon_kinematic_filter():
     def filtering(self, methods, extract_objs, extract_pairs):
         columns = [] # parse columns from recon_df
 
-        obj_key, obj_to_color = get_bbox_obj_info(get_bbox_loader(self.task, target_path='', dsize='', sample_rate='')) # dummy (target_path, dsize, sample_rate)
+        obj_key, obj_to_color = get_bbox_obj_info(get_bbox_loader(self.task, target_path='', dsize='', sample_interval='')) # dummy (target_path, dsize, sample_interval)
         
         # print('\n[+] \tsetting filter columns ... \n\tmethod : {} \n\textract_objs : {} ==> {}\n'.format(methods, extract_objs, extract_pairs))
         # base
@@ -24,7 +24,7 @@ class recon_kinematic_filter():
                 columns += ['{}_{}-{}'.format(obj, i, col) for col in entity_col]
 
         single_methods = [m for m in methods if m in ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity']]
-        pair_methods = [m for m in methods if m in ['IoU', 'gIoU']]
+        pair_methods = [m for m in methods if m in ['IoU', 'gIoU', 'dIoU', 'cIoU']]
 
         # single method
         for method in single_methods: # ['centroid', 'eoa', 'pathlen', ..]
@@ -36,7 +36,7 @@ class recon_kinematic_filter():
                     columns += ['{}-{}'.format(target_entity, col) for col in recon_method_col]
 
         # pair method
-        for method in pair_methods: # ['IoU', 'gIoU']
+        for method in pair_methods: # ['IoU', 'gIoU', 'dIoU', 'cIoU']
             _, recon_method_col, _ = get_recon_method(method, img_size=(0,0)) # dummy (img_size)
 
             for src_obj, target_obj in extract_pairs: # ('Grasper', 'Grasper'), ('Grasper', 'Blocks') .. 
@@ -80,7 +80,7 @@ class recon_kinematic_filter():
 if __name__ == "__main__":
     methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU']
     methods = ['centroid', 'partial_pathlen', 'IoU']
-    methods = ['IoU', 'gIoU']
+    methods = ['IoU', 'gIoU', 'dIoU', 'cIoU']
     extract_objs=['Grasper']
     extract_pairs=[('Grasper', 'Grasper')]
 

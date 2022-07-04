@@ -7,13 +7,13 @@ from tqdm import tqdm
 import cv2
 import pandas as pd
 
-EXCEPTION_NUM = -1000000
+EXCEPTION_NUM = -999
 
 class PETRAWBBOXLoader():
-    def __init__(self, root_dir, dsize, sample_rate):
+    def __init__(self, root_dir, dsize, sample_interval):
         self.root_dir = root_dir
         self.dsize = dsize
-        self.sample_rate = sample_rate # set 6, (30fps -> 5fps)
+        self.sample_interval = sample_interval # set 6, (30fps -> 5fps)
 
         self.obj_key = ['Grasper', 'Blocks', 'obj3', 'obj4', 'obj5']
 
@@ -31,15 +31,15 @@ class PETRAWBBOXLoader():
     def set_dsize(self, dsize): # should set
         self.dsize = dsize # w, h
 
-    def set_sample_rate(self, sample_rate): # should set
-        self.sample_rate = sample_rate  # set 6, (30fps -> 5fps)
+    def set_sample_interval(self, sample_interval): # should set
+        self.sample_interval = sample_interval  # set 6, (30fps -> 5fps)
 
     def load_data(self, objs):
         
         bbox_data = {}
 
         frame_list = glob(self.root_dir + '/*')
-        frame_list = natsort.natsorted(frame_list)[::self.sample_rate]
+        frame_list = natsort.natsorted(frame_list)[::self.sample_interval]
 
         for fi, fpath in enumerate(tqdm(frame_list)):
             # extract bbox each tools
