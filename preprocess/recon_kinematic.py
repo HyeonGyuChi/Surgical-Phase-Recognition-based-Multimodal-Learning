@@ -10,7 +10,7 @@ from itertools import combinations
 
 from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method, normalized_pixel, denormalized_pixel
 
-EXCEPTION_NUM = -1000000
+EXCEPTION_NUM = -999
 
 class recon_kinematic():
     def __init__(self, target_path, save_path, fps, sample_interval, dsize=(512, 512), task='PETRAW'):
@@ -182,7 +182,6 @@ class recon_kinematic():
                     
                         # calc from single rows : apply method from frame by frame
                         if method in ['IoU', 'gIoU', 'dIoU', 'cIoU']:
-                            print(method)
                             for f_idx in range(src_np.shape[0]):
                                 result = recon_method(src_np[f_idx, :], target_np[f_idx, :]) # pair numpy input
                                 kine_results.append(result)
@@ -222,7 +221,7 @@ if __name__ == "__main__":
 
     data_root_path = base_path + '/PETRAW/Training'
     target_root_path = data_root_path + '/Segmentation'
-    save_root_path = data_root_path + '/Seg_kine13'
+    save_root_path = data_root_path + '/Kinematic_segmentation'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
     

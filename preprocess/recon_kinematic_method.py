@@ -2,7 +2,7 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view # over version 1.20.0
 import math
 
-EXCEPTION_NUM = -1000000
+EXCEPTION_NUM = -999
 
 def is_exception(*argv):
     
@@ -37,10 +37,10 @@ def outerbox(src_bbox_np, target_bbox_np):
     src_x_min, src_x_max, src_y_min, src_y_max = src_bbox_np[0], src_bbox_np[1], src_bbox_np[2], src_bbox_np[3]
     target_x_min, target_x_max, target_y_min, target_y_max = target_bbox_np[0], target_bbox_np[1], target_bbox_np[2], target_bbox_np[3]
 
-    x_min = src_x_min if src_x_min < target_x_min else target_x_min
-    x_max = src_x_max if src_x_max < target_x_max else target_x_max
-    y_min = src_y_min if src_y_min < target_y_min else target_y_min
-    y_max = src_y_max if src_y_max < target_y_max else target_y_max
+    x_min = min(src_x_min, target_x_min)
+    x_max = max(src_x_max, target_x_max)
+    y_min = min(src_y_min, target_y_min)
+    y_max = max(src_y_max, target_y_max)
 
     return x_min, x_max, y_min, y_max
 
@@ -314,7 +314,7 @@ def get_dIoU(src_bbox_np, target_bbox_np): # (x min, x max, y min, y max) / (x m
 
         # euclidan
         d = euclidean_distance((src_cen_x, src_cen_y), (target_cen_x, target_cen_y))
-        c = euclidean_distance((outer_x_min, outer_y_min), (outer_x_max, outer_y_max))
+        c = euclidean_distance((outer_x_min, outer_y_min), (outer_x_max, outer_y_max)) + 1e-6 # error term
 
         # IoU
         IoU = get_IoU(src_bbox_np, target_bbox_np)
