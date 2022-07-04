@@ -152,7 +152,7 @@ def parse_opts():
     parser.add_argument('--dataset', 
             default='petraw', 
             type=str, 
-            choices=['mnist', 'jigsaws', 'misaw', 'petraw', 'gast'], 
+        #     choices=['mnist', 'jigsaws', 'misaw', 'petraw', 'gast'], 
             help='choose a multimodal dataset')
 
     parser.add_argument('--data_base_path',

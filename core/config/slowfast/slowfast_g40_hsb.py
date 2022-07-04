@@ -3,8 +3,8 @@ model = dict(
     backbone=dict(
         type='ResNet3dSlowFast',
         pretrained=None,
-        resample_rate=4,  # tau
-        speed_ratio=4,  # alpha
+        resample_rate=8,  # tau
+        speed_ratio=8,  # alpha
         channel_ratio=8,  # beta_inv
         slow_pathway=dict(
             type='resnet3d',
@@ -27,44 +27,54 @@ model = dict(
             conv1_stride_t=1,
             pool1_stride_t=1,
             norm_eval=False)),
+    # cls_head=dict(
+    #     type='SlowFastHead',
+    #     in_channels=2304,  # 2048+256
+    #     num_classes=27,
+    #     spatial_type='avg',
+    #     dropout_ratio=0.5,
+    #     multi_task=False,
+
+    #     loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
+    #     # loss_cls=dict(type='CBLoss', loss_weight=1.0, 
+    #     #     samples_per_cls=[
+    #     #         [154292, 26405, 6034, 15333, 76558, 10274, 1648],
+    #     #     ],
+    #     #     no_of_classes=[27])),
+    # train_cfg = None,
+    # test_cfg = dict(average_clips=None))
     cls_head=dict(
-        # type='SlowFastHead',
-        # in_channels=2304,  # 2048+256
-        # num_classes=27,
-        # spatial_type='avg',
-        # dropout_ratio=0.5,
-        # multi_task=False,
-
-        type='MultiTaskHead',
+        type='SlowFastHead',
         in_channels=2304,  # 2048+256
-        num_classes=[27],
+        num_classes=27,
         spatial_type='avg',
-        dropout_ratio=0.5,
-        multi_task=True,
-
-        loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0)),
-        # loss_cls=dict(type='CBLoss', loss_weight=1.0, 
-        #     samples_per_cls=[
-        #         [154292, 26405, 6034, 15333, 76558, 10274, 1648],
-        #     ],
-        #     no_of_classes=[27])),
+        dropout_ratio=0.5, #),
+        loss_cls=dict(type='CrossEntropyLoss', loss_weight=1.0,
+        class_weight=[1.1219280406844807, 0.9681475764205234, 2.700095993716775, 
+        0.9141240990478067, 0.2630276758636177, 1.3230899984498694, 
+        0.7860581656049337, 1.0354759361569805, 0.9021204066360199, 
+        0.5556540790991905, 4.018654414391012, 1.2661060557235002, 
+        6.645501651139689, 0.7116979830072313, 1.0866479455282185, 
+        1.7290175515393105, 0.4124589457336612, 1.2908398737972935, 
+        1.9176686603241502, 0.48788876865370095, 8.124719629747148, 
+        0.8676360619727526, 0.2317482728305169, 1.0, 0.6669441952076479, 
+        0.8789846237615558, 1.495703685202791])),
     train_cfg = None,
-    test_cfg = dict(average_clips=None))
+    test_cfg = dict(average_clips='prob'))#, max_testing_views=8))
 
 dataset_type = 'RawframeDataset'
-data_root = '/raid/datasets/public/PETRAW/'
-data_root_val = '/raid/datasets/public/PETRAW/'
-name = 'multi_task'
+data_root = '/dataset3/multimodal/gastric/rawframes'
+anno_root = '/dataset3/multimodal/gastric'
 split = 1
-ann_file_train = f'/raid/datasets/public/PETRAW/mmaction/petraw_{name}_train_split_{split}_rawframes.txt'
-ann_file_val = f'/raid/datasets/public/PETRAW/mmaction/petraw_{name}_val_split_{split}_rawframes.txt'
-ann_file_test = f'/raid/datasets/public/PETRAW/mmaction/petraw_{name}_val_split_{split}_rawframes.txt'
+ann_file_train = f'{anno_root}/gastric_train_{split}_rawframes.txt'
+ann_file_val = f'{anno_root}/gastric_val_{split}_rawframes.txt'
+ann_file_test = f'{anno_root}/gastric_val_{split}_rawframes.txt'
 img_norm_cfg = dict(
     mean=[117.1168392375, 75.27494787, 67.37629650299999], 
     std=[60.241352387999996, 51.261253263, 49.192591569], to_bgr=False)
 
 train_pipeline = [
-    dict(type='SampleFrames', clip_len=8, frame_interval=5, num_clips=1),
+    dict(type='SampleFrames', clip_len=32, frame_interval=30, num_clips=1),
     dict(type='RawFrameDecode'),
     dict(type='Resize', scale=(-1, 256)),
     dict(type='RandomResizedCrop'),
@@ -78,8 +88,8 @@ train_pipeline = [
 val_pipeline = [
     dict(
         type='SampleFrames',
-        clip_len=8,
-        frame_interval=5,
+        clip_len=32,
+        frame_interval=30,
         num_clips=1,
         test_mode=True),
     dict(type='RawFrameDecode'),
@@ -94,8 +104,8 @@ val_pipeline = [
 test_pipeline = [
     dict(
         type='SampleFrames',
-        clip_len=8,
-        frame_interval=5,
+        clip_len=32,
+        frame_interval=30,
         num_clips=1,
         test_mode=True),
     dict(type='RawFrameDecode'),
@@ -107,29 +117,47 @@ test_pipeline = [
     dict(type='Collect', keys=['imgs', 'label'], meta_keys=[]),
     dict(type='ToTensor', keys=['imgs'])
 ]
+# data = dict(
+#     videos_per_gpu=32,
+#     workers_per_gpu=6,
+#     train=dict(
+#         type=dataset_type,
+#         ann_file=ann_file_train,
+#         data_prefix=data_root,
+#         filename_tmpl='img_{:06}.jpg',
+#         multi_task=True,
+#         pipeline=train_pipeline),
+#     val=dict(
+#         type=dataset_type,
+#         ann_file=ann_file_val,
+#         data_prefix=data_root_val,
+#         filename_tmpl='img_{:06}.jpg',
+#         multi_task=True,
+#         pipeline=val_pipeline),
+#     test=dict(
+#         type=dataset_type,
+#         ann_file=ann_file_test,
+#         data_prefix=data_root_val,
+#         filename_tmpl='img_{:06}.jpg',
+#         multi_task=True,
+#         pipeline=test_pipeline))
 data = dict(
-    videos_per_gpu=64,
+    videos_per_gpu=32,
     workers_per_gpu=6,
     train=dict(
         type=dataset_type,
         ann_file=ann_file_train,
         data_prefix=data_root,
-        filename_tmpl='img_{:06}.jpg',
-        multi_task=True,
         pipeline=train_pipeline),
     val=dict(
         type=dataset_type,
         ann_file=ann_file_val,
-        data_prefix=data_root_val,
-        filename_tmpl='img_{:06}.jpg',
-        multi_task=True,
+        data_prefix=data_root,
         pipeline=val_pipeline),
     test=dict(
         type=dataset_type,
         ann_file=ann_file_test,
-        data_prefix=data_root_val,
-        filename_tmpl='img_{:06}.jpg',
-        multi_task=True,
+        data_prefix=data_root,
         pipeline=test_pipeline))
 # optimizer
 optimizer = dict(
@@ -143,21 +171,24 @@ lr_config = dict(
     warmup='linear',
     warmup_by_epoch=True,
     warmup_iters=34)
-total_epochs = 50
+
+total_epochs = 256
 checkpoint_config = dict(interval=5)
 
 evaluation = dict(
-    interval=5, metrics=['top_k_accuracy', 'mean_class_accuracy'])
+    interval=10, metrics=['top_k_accuracy', 'mean_class_accuracy'])
+
 log_config = dict(
     interval=10,
     hooks=[
-        dict(type='TextLoggerHook'),
+        dict(type='TextLoggerHook',by_epoch=False),
+        
         #    dict(type='TensorboardLoggerHook'),
     ])
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 # work_dir = f'/raid/results/phase_recognition/mmaction/petraw/{name}/test'
-work_dir = '/code/multimodal/logs/multi_task_test5'
+work_dir = '/code/multimodal/logs/slowfast_gastric_40'
 # load_from = 'https://download.openmmlab.com/mmaction/recognition/slowfast/slowfast_r152_4x16x1_256e_kinetics400_rgb/slowfast_r152_4x16x1_256e_kinetics400_rgb_20210122-bdeb6b87.pth'
 # load_from = '/raid/pretrained_models/mmaction2/slowfast_r50_256p_8x8x1_256e_kinetics400_rgb_20200810-863812c2.pth'
 

@@ -63,6 +63,23 @@ class GastrectomyDataset(torch.utils.data.Dataset):
         return len(self.labels)
 
     def __getitem__(self, index):
+        # if self.state == 'train':
+        init_label = self.labels[index]
+        ids = np.where(np.array(self.labels) == init_label)[0]
+        
+        while True:
+            rand_id = int(np.random.choice(ids, 1))
+
+            check = True
+            if rand_id - 16 >= 0 and rand_id + 15 < len(self.labels):
+                for ri in range(rand_id - 16, rand_id + 16):
+                    if self.labels[ri] != init_label:
+                        check = False
+                        break
+                if check:
+                    index = rand_id
+                    break
+
         data = {}
         
         for dtype in self.data_dict.keys():
@@ -274,10 +291,10 @@ class GastrectomyDataset(torch.utils.data.Dataset):
                 for idx2 in range(n_classes):
                     self.class_weights[idx][idx2] = bot_sum / (n_classes * self.class_cnt[idx][idx2])
                 
-                if idx < 2:
-                    self.class_weights[idx] = torch.Tensor(np.ones(len(self.class_cnt[idx]))).cuda()
-                else:
-                    self.class_weights[idx] = torch.Tensor(self.class_cnt[idx]).cuda()
+                # if idx < 2:
+                #     self.class_weights[idx] = torch.Tensor(np.ones(len(self.class_cnt[idx]))).cuda()
+                # else:
+                self.class_weights[idx] = torch.Tensor(self.class_cnt[idx]).cuda()
 
             print('CLS WEIGHTS - ', idx, ' : ',  self.class_cnt[idx], self.class_weights[idx])
 
@@ -341,7 +358,7 @@ class GastrectomyDataset(torch.utils.data.Dataset):
 
                     # if seq_data[-1].shape[0] != 8:
                         # print(dir_name, st, seq_data[-1].shape)
-                    if len(seq_data[-1]) != 8:
+                    if len(seq_data[-1]) != self.args.clip_size:
                         print(dir_name, st, len(seq_data[-1]))
 
             self.data_dict[key] = array(seq_data)

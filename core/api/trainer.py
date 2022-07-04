@@ -275,7 +275,7 @@ class Trainer():
 
                 
         elif self.args.model == 'slowfast':
-            y_hat = self.model.forward(x['video'], return_loss=True, infer_3d=True)
+            y_hat = self.model.forward(imgs=x['video'], return_loss=True, infer_3d=True)
 
             loss = self.calc_loss(y_hat, y)
         else:
@@ -298,6 +298,9 @@ class Trainer():
                 if len(y.shape) == 3:
                     loss += self.loss_fn(y_hat[ti], y[:, 0, ti])
                 else:
+                    if isinstance(y_hat, list):
+                        y_hat = y_hat[0]
+
                     loss += self.loss_fn(y_hat, y[:, ti])
 
                 loss_div_cnt += 1
@@ -314,7 +317,10 @@ class Trainer():
                     if isinstance(y_hat, list):
                         y_hat = y_hat[0]
 
-                    loss += self.loss_fn[ti](y_hat, y[:, 0])
+                    if self.args.dataset == 'gast_mm':
+                        loss += self.loss_fn[ti](y_hat, y)
+                    else:
+                        loss += self.loss_fn[ti](y_hat, y[:, 0])
 
                 loss_div_cnt += 1
                     

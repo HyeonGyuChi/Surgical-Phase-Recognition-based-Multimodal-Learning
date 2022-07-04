@@ -18,6 +18,7 @@ class MetricHelper():
         self.n_classes = self.args.n_classes
         self.classes = list(range(self.n_classes))
         self.target_metric = self.args.target_metric
+
         if 'loss' in self.target_metric:
             self.best_metric = math.inf
         else:
@@ -43,6 +44,7 @@ class MetricHelper():
         
         self.results = np.zeros((self.args.max_epoch, n_result))
         self.results2 = np.zeros((self.args.max_epoch, n_result2))
+        self.results3 = np.zeros((self.args.max_epoch, 4))
         
     def update_epoch(self, epoch):
         self.epoch = epoch
@@ -86,7 +88,14 @@ class MetricHelper():
             
             gt_cnt_list = [len(np.where(np.array(gt_list) == i)[0]) for i in self.classes]
             pred_TP_list = [cm.TP[cls_name] for cls_name in cm.classes]
-            p_acc = [p_TP / gt_cnt for p_TP, gt_cnt in zip(pred_TP_list, gt_cnt_list)]
+            # p_acc = [p_TP / gt_cnt for p_TP, gt_cnt in zip(pred_TP_list, gt_cnt_list)]
+            p_acc = []
+            for p_TP, gt_cnt in zip(pred_TP_list, gt_cnt_list):
+                if gt_cnt != 0:
+                    p_acc.append(p_TP / gt_cnt)
+                else:
+                    p_acc.append(0)
+            
 
             metrics = {
                 'Epoch': self.epoch,
@@ -101,7 +110,7 @@ class MetricHelper():
                 'Jaccard': [cm.J[cls_name] for cls_name in cm.classes],
                 'Balance-Acc': bal_acc,
                 'Percentage-Acc': p_acc,
-                'Total_P-Acc': sum(p_acc),
+                'Total_P-Acc': np.mean(p_acc),
                 'AUROC': auroc_mean,
             }
 
@@ -132,6 +141,9 @@ class MetricHelper():
             for ai, acc in enumerate(metrics['Percentage-Acc']):
                 self.results2[self.epoch-1, cnt] = acc
                 cnt += 1
+
+            self.results3[self.epoch-1, :] = [metrics['Total_P-Acc'], np.mean(metrics['Precision']), 
+                                                np.mean(metrics['Recall']), np.mean(metrics['F1-Score'])]
         
             print('CLS BACC : {:.4f}'.format(metrics['Balance-Acc']))
 
@@ -181,7 +193,7 @@ class MetricHelper():
         if self.args.dataset == 'petraw':
             self.save_petraw_results()
 
-        elif self.args.dataset == 'gast':
+        elif 'gast' in self.args.dataset:
             self.save_gast_results()
 
 
@@ -210,10 +222,10 @@ class MetricHelper():
                 float_format='%.4f')
     
     def save_gast_results(self):
-        cols = ['Acc' + f"_{i}" for i in range(self.results2.shape[-1])]
+        cols = ['Acc', 'mPre', 'mRe', 'mF1'] + ['Acc' + f"_{i}" for i in range(self.results2.shape[-1])]
         save_path = self.args.save_path + '/result_{}.csv'.format(self.args.model)
         
-        data = [*list(self.results2[self.epoch-1, :])]
+        data = [*self.results3[self.epoch-1, :], *list(self.results2[self.epoch-1, :])]
 
         if os.path.exists(save_path):
             df = pd.read_csv(save_path)

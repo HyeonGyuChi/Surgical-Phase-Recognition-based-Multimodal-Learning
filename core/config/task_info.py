@@ -20,5 +20,9 @@ task_dict = {
     'gast': {
         'phase': [1, 27],
         'all': [1, 27],
+    },
+    'gast_mm': {
+        'phase': [1, 27],
+        'all': [1, 27],
     }
 }
