@@ -140,7 +140,6 @@ class recon_kinematic():
 
                     if m in ['centroid', 'eoa', 'speed']:
                         kine_df = get_bbox_visual_kinematic(method=m, bbox_np1=target_np1, bbox_np2=target_np2)
-                        
 
                 recon_df.columns = col_name
 
@@ -157,9 +156,9 @@ if __name__ == "__main__":
 
     base_path = '/dataset3/multimodal'
 
-    data_root_path = base_path + '/PETRAW/Training'
-    target_root_path = data_root_path + '/Segmentation'
-    save_root_path = data_root_path + '/Seg_kine8'
+    data_root_path = base_path + '/gastric/Training'
+    target_root_path = data_root_path + '/Segmentation_swin'
+    save_root_path = data_root_path + '/kinematic_swin'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
 
