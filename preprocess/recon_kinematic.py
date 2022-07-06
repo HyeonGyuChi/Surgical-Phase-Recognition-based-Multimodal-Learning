@@ -221,8 +221,8 @@ if __name__ == "__main__":
     base_path = '/raid/multimodal'
 
     data_root_path = base_path + '/gastric'
-    target_root_path = data_root_path + '/Segmentation_deeplabv3_concat'
-    save_root_path = data_root_path + '/Kinematic_deeplabv3'
+    target_root_path = data_root_path + '/Segmentation_swin_concat'
+    save_root_path = data_root_path + '/Kinematic_swin'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
     
@@ -271,6 +271,8 @@ if __name__ == "__main__":
             rk.set_path(target_path, save_path)
             recon_df = rk.reconstruct(methods, extract_objs, extract_pairs)
     '''
+
+    print('done')
 
 
 def concat_gastric_seg_data():
