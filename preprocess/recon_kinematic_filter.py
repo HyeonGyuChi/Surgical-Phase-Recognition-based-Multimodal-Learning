@@ -51,28 +51,28 @@ class recon_kinematic_filter():
                         target_entity = '{}_{}'.format(target_obj, j)
                         columns += ['{}-{}-{}'.format(src_entity, target_entity, col) for col in recon_method_col]
 
-        print('NUM OF FEATURE : {}'.format(len(columns)))
+        # print('NUM OF FEATURE : {}'.format(len(columns)))
         
-        print(columns)
-        print('\n[-] \tsetting filter columns ...')
+        # print(columns)
+        # print('\n[-] \tsetting filter columns ...')
 
-        print('\n[+] \tparsing from {} ...'.format(self.src_path))
+        # print('\n[+] \tparsing from {} ...'.format(self.src_path))
         
         with open(self.src_path, 'rb') as f:
             src_data = pickle.load(f)
 
-        print('\n ==> SOURCE')
-        print('dshape:', src_data.shape)
-        print('col num: ', len(src_data.columns))
-        print('col', src_data.columns)
+        # print('\n ==> SOURCE')
+        # print('dshape:', src_data.shape)
+        # print('col num: ', len(src_data.columns))
+        # print('col', src_data.columns)
 
         filtered_data = src_data[columns] # parsing from colnb
 
-        print('\n ==> FILTER')
-        print('dshape:', filtered_data.shape)
-        print(filtered_data)
+        # print('\n ==> FILTER')
+        # print('dshape:', filtered_data.shape)
+        # print(filtered_data)
 
-        print('\n[-] \tparsing from {} ...\n'.format(self.src_path))
+        # print('\n[-] \tparsing from {} ...\n'.format(self.src_path))
 
         return filtered_data
         

@@ -198,12 +198,13 @@ def get_velocity(bbox_nps, interval_sec): # (x min, x max, y min, y max)
     f_len, _ = bbox_nps.shape
     velocity = np.zeros((f_len, 2)) # x_pathlen, y_pathlen
 
-    disp = get_partial_displacement(bbox_nps, window_size=8)
+    disp = get_partial_displacement(bbox_nps, window_size=1)
     
     for f_idx in range(f_len):
         if f_idx == 0:
             x_v, y_v = 0,0
-        
+        # interval_sec = 1/5 petraw
+        # interval_sec = 1 gastric
         else:
             x_disp, y_disp = disp[f_idx, :]
             if not is_exception(x_disp, y_disp):
@@ -222,7 +223,7 @@ def get_speed(bbox_nps, interval_sec): # (x min, x max, y min, y max)
     f_len, _ = bbox_nps.shape
     speed = np.zeros((f_len, 1)) # x_pathlen, y_pathlen
 
-    path_len = get_partial_path_length(bbox_nps, window_size=8)
+    path_len = get_partial_path_length(bbox_nps, window_size=1)
     
     for f_idx in range(f_len):
         if f_idx == 0:
@@ -231,14 +232,14 @@ def get_speed(bbox_nps, interval_sec): # (x min, x max, y min, y max)
         else:
             x_pathlen, y_pathlen = path_len[f_idx, :]
             if not is_exception(x_pathlen, y_pathlen):
-                s = (x_pathlen + y_pathlen) / interval_sec
+                s = np.sqrt((np.power(x_pathlen,2) + np.power(y_pathlen,2))) / interval_sec
             
             else:
                 s = EXCEPTION_NUM
     
         speed[f_idx, :] = s
 
-    return speed # numpy, (velocity) * f_len
+    return speed # numpy, (speed) * f_len
 
 def get_IoU(src_bbox_np, target_bbox_np, return_U=False): # (x min, x max, y min, y max) / (x min, x max, y min, y max)
 
