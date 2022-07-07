@@ -1,5 +1,6 @@
-from preprocess.recon_kinematic_method import get_centroid, get_eoa, get_partial_path_length, get_cumulate_path_length, get_speed, get_velocity, get_IoU, get_gIoU
-from preprocess.loader import PETRAWBBOXLoader
+from recon_kinematic_method import get_centroid, get_eoa, get_partial_path_length, get_cumulate_path_length, get_speed, get_velocity, get_IoU, get_gIoU, get_dIoU, get_cIoU
+from loader import PETRAWBBOXLoader, GASTRICBBOXLoader
+import numpy as np
 
 
 def normalized_pixel(pixel_np, size):
@@ -8,18 +9,18 @@ def normalized_pixel(pixel_np, size):
 def denormalized_pixel(pixel_np, size):  
     return pixel_np * size
 
-
-def get_bbox_loader(task, target_path, dsize, sample_rate):
+def get_bbox_loader(task, target_path, dsize, sample_interval):
     dataloader = {
         'PETRAW': PETRAWBBOXLoader,
+        'GASTRIC': GASTRICBBOXLoader,
     }
 
-    return dataloader[task](target_path, dsize, sample_rate)
+    return dataloader[task](target_path, dsize, sample_interval)
 
-def set_bbox_loader(bbox_loader, target_path, dsize, sample_rate):
+def set_bbox_loader(bbox_loader, target_path, dsize):
     bbox_loader.set_root_dir(target_path)
     bbox_loader.set_dsize(dsize)
-    bbox_loader.set_sample_rate(sample_rate)
+    # bbox_loader.set_sample_interval(sample_interval)
 
     return bbox_loader
 
@@ -39,6 +40,8 @@ def get_recon_method(method, img_size):
         'velocity': get_velocity,
         'IoU': get_IoU, # return_U = Fasle
         'gIoU': get_gIoU,
+        'dIoU': get_dIoU,
+        'cIoU': get_cIoU,
     }
 
     recon_method_col = {
@@ -50,6 +53,8 @@ def get_recon_method(method, img_size):
         'velocity': ['x_velocity', 'y_velocity'], # => displacement / (1/fps) => [-, +] 부호 # 변위/시간
         'IoU': ['IoU'],
         'gIoU': ['gIoU'],
+        'dIoU': ['dIoU'],
+        'cIoU': ['cIoU'],
     }
 
     w, h = img_size
@@ -62,6 +67,8 @@ def get_recon_method(method, img_size):
         'velocity': [w, h],
         'IoU': [1], # only U normlaized, return_U = Fasle
         'gIoU': [1],
+        'dIoU': [1],
+        'cIoU': [1],
     }
 
     return recon_method[method], recon_method_col[method], normalized_weight[method]

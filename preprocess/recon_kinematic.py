@@ -7,34 +7,34 @@ from tqdm import tqdm
 import cv2
 import pandas as pd
 from itertools import combinations
+from shutil import copyfile
 
-from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method, normalized_pixel, denormalized_pixel
+from recon_kinematic_helper import get_bbox_loader, set_bbox_loader, get_bbox_obj_info, get_recon_method, normalized_pixel, denormalized_pixel, standardization
 
-EXCEPTION_NUM = -1000000
+EXCEPTION_NUM = -999
 
 class recon_kinematic():
-    def __init__(self, target_path, save_path, sample_rate, dsize=(512, 512), task='PETRAW'):
+    def __init__(self, target_path, save_path, fps, sample_interval, dsize=(512, 512), task='PETRAW'):
         self.target_path = target_path
         self.save_path = save_path
 
         # hyper config
         self.dsize = dsize # w, h
-        self.sample_rate = sample_rate
+        self.sample_interval = sample_interval # sampling interval from segmentation imgs
+        self.fps = fps # for calc interval sec in [velocity, speed]
 
         # bbox dataloader setup
-        self.bbox_loader = get_bbox_loader(task, self.target_path, self.dsize, self.sample_rate)
+        self.bbox_loader = get_bbox_loader(task, self.target_path, self.dsize, self.sample_interval)
 
     def set_path(self, target_path, save_path):
         self.target_path, self.save_path = target_path, save_path
         self.bbox_loader = set_bbox_loader(self.bbox_loader, self.target_path, self.dsize)
 
-    def reconstruct(self, methods, extract_objs, extract_pairs, is_normalized=True):
+    def reconstruct(self, methods, extract_objs, extract_pairs, is_normalized=False, is_standardization=True):
 
         recon_df = pd.DataFrame([]) # save and return
         columns = [] # in recon_df
         entities_start_ids = {}
-        
-        # combinations_of_objs = list(combinations(extract_objs, 2)) # total obj pair
 
         print('\n[+] \t load bbox data ... {}'.format(extract_objs))
         bbox_data = self.bbox_loader.load_data(extract_objs)
@@ -73,11 +73,13 @@ class recon_kinematic():
 
         # list to np
         entities_np = np.hstack(entities_np) # pixel
+        entities_np = entities_np.astype(np.float64) # int => float for normalized
+
         print('entities - {}'.format(entities_np.shape))
             
         # append recon df
-        if is_normalized: # normalized 
-            norm_entities_np = np.zeros(entities_np.shape)
+        if is_normalized: # normalized
+            norm_entities_np = np.full_like(entities_np, fill_value=EXCEPTION_NUM)
             w, h = self.dsize
             for k, wt in enumerate([w, w, h, h] * entities_cnt):
                 for f_idx in range(entities_np.shape[0]):
@@ -102,7 +104,7 @@ class recon_kinematic():
         print('\n[+] \t single reconstruct ... {}'.format(extract_objs))
 
         single_methods = [m for m in methods if m in ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity']]
-        pair_methods = [m for m in methods if m in ['IoU', 'gIoU']]
+        pair_methods = [m for m in methods if m in ['IoU', 'gIoU', 'dIoU', 'cIoU']]
         
         print('single method: ', single_methods)
 
@@ -129,11 +131,14 @@ class recon_kinematic():
                         kine_results = np.stack(kine_results) # list to np
                     
                     # calc from multiple rows : apply method from all frame
-                    if method in ['partial_pathlen', 'cumulate_pathlen']:
+                    if method in ['cumulate_pathlen']:
                         kine_results = recon_method(target_np)
+                    
+                    if method in ['partial_pathlen']:
+                        kine_results = recon_method(target_np, window_size=8)
 
                     if method in ['speed', 'velocity']:
-                        kine_results = recon_method(target_np, interval_sec=1/30)
+                        kine_results = recon_method(target_np, interval_sec= self.fps)
 
                     # normalized 
                     if is_normalized:
@@ -141,7 +146,7 @@ class recon_kinematic():
                             for f_idx in range(target_np.shape[0]):
                                 if not kine_results[f_idx, k] == EXCEPTION_NUM:
                                     kine_results[f_idx, k] = normalized_pixel(kine_results[f_idx, k], wt)
-
+                    
                     # append recon df
                     recon_df = pd.concat([recon_df, pd.DataFrame(kine_results)], axis=1) # column bind
                     columns += ['{}-{}'.format(target_entity, col) for col in recon_method_col]
@@ -158,7 +163,7 @@ class recon_kinematic():
         print('pair methods: ', pair_methods)
 
         # recon pair value
-        for method in pair_methods: # ['IoU', 'gIoU']
+        for method in pair_methods: # ['IoU', 'gIoU', 'dIoU', 'cIoU']
             for src_obj, target_obj in extract_pairs: # ('Grasper', 'Grasper'), ('Grasper', 'Blocks') .. 
                 for i, src_start_idx in enumerate(entities_start_ids[src_obj]): # src per entiity
                     if src_obj == target_obj and i > 0 : break  # same obj, calc only one time
@@ -177,7 +182,7 @@ class recon_kinematic():
                         target_np = entities_np[:, target_start_idx: target_start_idx + len(entity_col)] # entitiy bbox info
                     
                         # calc from single rows : apply method from frame by frame
-                        if method in ['IoU', 'gIoU']:
+                        if method in ['IoU', 'gIoU', 'dIoU', 'cIoU']:
                             for f_idx in range(src_np.shape[0]):
                                 result = recon_method(src_np[f_idx, :], target_np[f_idx, :]) # pair numpy input
                                 kine_results.append(result)
@@ -205,6 +210,26 @@ class recon_kinematic():
         
         print('\n[-] \t reconstruct ... {} => {}'.format(extract_objs, extract_pairs))
 
+        # standarization
+        if is_standardization:
+            print('\n[+] \t standardization ...')
+            all_value = recon_df.values
+
+            standardization_value = np.full(all_value.shape, fill_value=-2, dtype=np.float64)
+
+            d_idx, feat_idx = all_value.shape
+            print('all value :', all_value)
+            print('all value shape:', all_value.shape)
+            for feat_i in range(feat_idx): # only standardization with EXCEPTION
+                recon_ids = np.where(all_value[:, feat_i] != EXCEPTION_NUM)
+                
+                mean, std = np.mean(all_value[recon_ids, feat_i]), np.std(all_value[recon_ids, feat_i])
+                standardization_value[recon_ids, feat_i] = (all_value[recon_ids, feat_i] - mean) / (std + 1e-6)
+
+            recon_df = pd.DataFrame(standardization_value, columns=recon_df.columns)
+            print(recon_df.describe())
+            print('\n[-] \t standardization ...')
+        
         # ref: https://tariat.tistory.com/583
         recon_df.to_pickle(os.path.splitext(self.save_path)[0] + '.pkl')
         recon_df.to_csv(self.save_path)        
@@ -212,31 +237,88 @@ class recon_kinematic():
         return recon_df
 
 if __name__ == "__main__":
-
-    base_path = '/dataset3/multimodal'
+    
+    base_path = '/raid/multimodal'
 
     data_root_path = base_path + '/PETRAW/Training'
-    target_root_path = data_root_path + '/Segmentation'
-    save_root_path = data_root_path + '/Seg_kine11-5fps'
+    target_root_path = data_root_path + '/Segmentation_swin'
+    save_root_path = data_root_path + '/Kinematic_swin_new'
 
     file_list = natsort.natsorted(os.listdir(target_root_path))
     
-    rk = recon_kinematic("", "", 6) # sample rate 6 (5fps)
-
-    # extract_objs = ['Grasper', 'Blocks']
-    # extract_pairs = [('Grasper', 'Grasper'), ('Grasper', 'Blocks')]
+    rk = recon_kinematic("", "", fps=5, sample_interval=300, dsize=(512, 512), task='PETRAW') # sample rate 6 (5fps)
 
     extract_objs = ['Grasper']
     extract_pairs = [('Grasper', 'Grasper')]
 
-    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU']
+    # extract_objs = ['Background',
+    #             'HarmonicAce_Head','HarmonicAce_Body','MarylandBipolarForceps_Head',
+    #             'MarylandBipolarForceps_Wrist','MarylandBipolarForceps_Body',
+    #             'CadiereForceps_Head','CadiereForceps_Wrist','CadiereForceps_Body',
+    #             'CurvedAtraumaticGrasper_Head','CurvedAtraumaticGrasper_Body',
+    #             'Stapler_Head','Stapler_Body',
+    #             'Medium-LargeClipApplier_Head','Medium-LargeClipApplier_Wrist','Medium-LargeClipApplier_Body',
+    #             'SmallClipApplier_Head','SmallClipApplier_Wrist','SmallClipApplier_Body',
+    #             'Suction-Irrigation','Needle',
+    #             'Endotip','Specimenbag','DrainTube','Liver','Stomach',
+    #             'Pancreas','Spleen','Gallbbladder','Gauze','The_Other_Inst','The_Other_Tissue']
+
+    # extract_pairs = combinations_of_objs = list(combinations(extract_objs, 2)) # total obj pair
+    # for i, p in enumerate(extract_pairs):
+    #     print('{}: {}'.format(i, p))
+
+    methods = ['centroid', 'eoa', 'partial_pathlen', 'cumulate_pathlen', 'speed', 'velocity', 'IoU', 'gIoU', 'dIoU', 'cIoU']
     
+    
+    # for PETRAW, concat GASTRIC
     for key_val in file_list:
         target_path = target_root_path + '/{}'.format(key_val)
-        # save_path = save_root_path + '/{}_seg_ki.pkl'.format(key_val)
         save_path = save_root_path + '/{}_seg_ki.csv'.format(key_val)
 
         os.makedirs(save_root_path, exist_ok=True)
         rk.set_path(target_path, save_path)
         recon_df = rk.reconstruct(methods, extract_objs, extract_pairs)
+
+    # for GASTRIC
+    '''
+    for key_val in file_list: # pateint
+        video_list = natsort.natsorted(os.listdir(os.path.join(target_root_path, key_val)))
+        for video_name in video_list:
+            target_path = target_root_path + '/{}/{}'.format(key_val, video_name)
+            save_path = save_root_path + '/{}/{}_seg_ki.csv'.format(key_val, video_name)
+            
+            os.makedirs(os.path.join(save_root_path, 'key_val'), exist_ok=True)
+            rk.set_path(target_path, save_path)
+            recon_df = rk.reconstruct(methods, extract_objs, extract_pairs)
+    '''
+
+    print('done')
+
+def concat_gastric_seg_data():
+    base_path = '/raid/multimodal'
+
+    data_root_path = base_path + '/gastric'
+    target_root_path = data_root_path + '/Segmentation_deeplabv3'
+    save_root_path = data_root_path + '/Segmentation_deeplabv3_concat'
+
+    file_list = natsort.natsorted(os.listdir(target_root_path))
+
+    # concatnate
+    for key_val in file_list: # pateint
+        video_list = natsort.natsorted(os.listdir(os.path.join(target_root_path, key_val)))
+        for video_name in video_list:
+            target_path = target_root_path + '/{}/{}'.format(key_val, video_name)
+            save_path = save_root_path + '/{}'.format(key_val)
+            os.makedirs(save_path, exist_ok=True)
+
+            f_list = glob(os.path.join(target_path, '*.gz'))
+
+            for src in f_list:
+                dst_filename = '{}-{}'.format(src.split('/')[-2], os.path.basename(src))
+                dst = os.path.join(save_path, dst_filename)
+                print('src: ', src)
+                print('dst: ', dst)
+                print('-----' * 4)
+                copyfile(src, dst)
     
+    print('done')

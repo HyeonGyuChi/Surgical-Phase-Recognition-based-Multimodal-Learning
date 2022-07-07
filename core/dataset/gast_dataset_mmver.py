@@ -71,6 +71,8 @@ class GastrectomyDatasetMM(torch.utils.data.Dataset):
         label, img_path_list = self.data_dict['video'][index]
         clip_len = len(img_path_list)
 
+        # print(len(self.data_dict['video']), index, clip_len)
+
         # while clip_len < self.args.clip_size:
         #     rand_id = int(np.random.choice(len(self.data_dict['video']), 1))
         #     label, img_path_list = self.data_dict['video'][index]
@@ -82,10 +84,10 @@ class GastrectomyDatasetMM(torch.utils.data.Dataset):
         while True:
             # rand_id = int(np.random.choice(list(range(sample_ratio*hf_sz, clip_len-sample_ratio*hf_sz, sample_ratio)), 1))
             rand_id = int(np.random.choice(list(range(hf_sz, clip_len-hf_sz)), 1))
-            if rand_id - 16 >= 0 and rand_id + 15 < clip_len:
-            # rand_id = int(np.random.choice(list(range(0, clip_len-hf_sz*2)), 1))
+            # rand_id = int(np.random.choice(list(range(0, clip_len)), 1))
 
             # if rand_id + 32 < clip_len:
+            if rand_id - 16 >= 0 and rand_id + 15 < clip_len:
                 index = rand_id
                 break
 
@@ -94,8 +96,7 @@ class GastrectomyDatasetMM(torch.utils.data.Dataset):
         X = []
         for vpath in img_path_list[rand_id-16:rand_id+16]:
         # for vpath in img_path_list[rand_id:rand_id+32]:
-            img = Image.open(vpath) # h, w, ch
-            # img = cv2.imread(vpath)
+            img = Image.open(vpath) # h, w, chch
             X.append(img)
             # img = cv2.imread(vpath) # h, w, ch
             # X.append(img[:,:,::-1])
@@ -144,6 +145,8 @@ class GastrectomyDatasetMM(torch.utils.data.Dataset):
         patient_list = os.listdir(target_path)
         patient_list = natsort.natsorted(patient_list)
 
+        self.labels = []
+
         for tmp_patient in patient_list:
             p = tmp_patient.split('_')[4]
             patient = 'R{:03d}'.format(int(p))
@@ -160,6 +163,7 @@ class GastrectomyDatasetMM(torch.utils.data.Dataset):
                     if len(file_list) >= self.args.clip_size * self.args.subsample_ratio:
                         self.data_dict['video'].append([label, file_list[::self.args.subsample_ratio]])
                         self.class_cnt[0][label] += len(file_list)
+                        self.labels.append(label)
 
         # class weight computation
         for idx in range(1):

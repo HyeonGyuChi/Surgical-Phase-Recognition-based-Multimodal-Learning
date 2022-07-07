@@ -3,8 +3,13 @@ model = dict(
     backbone=dict(
         type='ResNet3dSlowFast',
         pretrained=None,
+<<<<<<< HEAD
         resample_rate=4,  # tau
         speed_ratio=4,  # alpha
+=======
+        resample_rate=8,  # tau
+        speed_ratio=8,  # alpha
+>>>>>>> 5ab95cf8272565a54f94853f2484b45eaa6daf15
         channel_ratio=8,  # beta_inv
         slow_pathway=dict(
             type='resnet3d',
@@ -117,7 +122,34 @@ test_pipeline = [
     dict(type='Collect', keys=['imgs', 'label'], meta_keys=[]),
     dict(type='ToTensor', keys=['imgs'])
 ]
+<<<<<<< HEAD
 
+=======
+# data = dict(
+#     videos_per_gpu=32,
+#     workers_per_gpu=6,
+#     train=dict(
+#         type=dataset_type,
+#         ann_file=ann_file_train,
+#         data_prefix=data_root,
+#         filename_tmpl='img_{:06}.jpg',
+#         multi_task=True,
+#         pipeline=train_pipeline),
+#     val=dict(
+#         type=dataset_type,
+#         ann_file=ann_file_val,
+#         data_prefix=data_root_val,
+#         filename_tmpl='img_{:06}.jpg',
+#         multi_task=True,
+#         pipeline=val_pipeline),
+#     test=dict(
+#         type=dataset_type,
+#         ann_file=ann_file_test,
+#         data_prefix=data_root_val,
+#         filename_tmpl='img_{:06}.jpg',
+#         multi_task=True,
+#         pipeline=test_pipeline))
+>>>>>>> 5ab95cf8272565a54f94853f2484b45eaa6daf15
 data = dict(
     videos_per_gpu=32,
     workers_per_gpu=6,
@@ -137,6 +169,7 @@ data = dict(
         data_prefix=data_root,
         pipeline=test_pipeline))
 # optimizer
+<<<<<<< HEAD
 # optimizer = dict(
 #     type='SGD', lr=0.1, momentum=0.9,
 #     weight_decay=0.0001)  # this lr is used for 8 gpus
@@ -144,6 +177,11 @@ optimizer = dict(
     type='SGD', lr=0.01, momentum=0.9,
     weight_decay=0.0001)  # this lr is used for 8 gpus
 
+=======
+optimizer = dict(
+    type='SGD', lr=0.1, momentum=0.9,
+    weight_decay=0.0001)  # this lr is used for 8 gpus
+>>>>>>> 5ab95cf8272565a54f94853f2484b45eaa6daf15
 optimizer_config = dict(grad_clip=dict(max_norm=40, norm_type=2))
 # learning policy
 lr_config = dict(
@@ -157,21 +195,39 @@ total_epochs = 256
 checkpoint_config = dict(interval=5)
 
 evaluation = dict(
+<<<<<<< HEAD
     interval=5, metrics=['top_k_accuracy', 'mean_class_accuracy'])
 log_config = dict(
     interval=10,
     hooks=[
         dict(type='TextLoggerHook'),
+=======
+    interval=10, metrics=['top_k_accuracy', 'mean_class_accuracy'])
+
+log_config = dict(
+    interval=10,
+    hooks=[
+        dict(type='TextLoggerHook',by_epoch=False),
+        
+>>>>>>> 5ab95cf8272565a54f94853f2484b45eaa6daf15
         #    dict(type='TensorboardLoggerHook'),
     ])
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
 # work_dir = f'/raid/results/phase_recognition/mmaction/petraw/{name}/test'
+<<<<<<< HEAD
 work_dir = '/code/multimodal/logs/slowfast_gastric_40_no_pre'
 # load_from = 'https://download.openmmlab.com/mmaction/recognition/slowfast/slowfast_r152_4x16x1_256e_kinetics400_rgb/slowfast_r152_4x16x1_256e_kinetics400_rgb_20210122-bdeb6b87.pth'
 # load_from = '/raid/pretrained_models/mmaction2/slowfast_r50_256p_8x8x1_256e_kinetics400_rgb_20200810-863812c2.pth'
 
 load_from = None #'https://download.openmmlab.com/mmaction/recognition/slowfast/slowfast_r50_8x8x1_256e_kinetics400_rgb/slowfast_r50_8x8x1_256e_kinetics400_rgb_20200716-73547d2b.pth'
+=======
+work_dir = '/code/multimodal/logs/slowfast_gastric_40'
+# load_from = 'https://download.openmmlab.com/mmaction/recognition/slowfast/slowfast_r152_4x16x1_256e_kinetics400_rgb/slowfast_r152_4x16x1_256e_kinetics400_rgb_20210122-bdeb6b87.pth'
+# load_from = '/raid/pretrained_models/mmaction2/slowfast_r50_256p_8x8x1_256e_kinetics400_rgb_20200810-863812c2.pth'
+
+load_from = 'https://download.openmmlab.com/mmaction/recognition/slowfast/slowfast_r50_8x8x1_256e_kinetics400_rgb/slowfast_r50_8x8x1_256e_kinetics400_rgb_20200716-73547d2b.pth'
+>>>>>>> 5ab95cf8272565a54f94853f2484b45eaa6daf15
 resume_from = None
 find_unused_parameters = False
 workflow = [('train', 1)]

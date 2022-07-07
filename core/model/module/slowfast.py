@@ -1,7 +1,7 @@
 import sys 
 sys.path.append('../../../accessory/mmaction2')
 from mmaction.models import build_model
-
+import os
 import torch
 import mmcv
 
@@ -18,7 +18,7 @@ def generate_slowfast(args):
     elif 'gast' in args.dataset:
         if args.slowfast_depth == 50:
             config_path = './core/config/slowfast/slowfast_g40.py'
-            # config_path = '/code/multimodal/logs/slowfast_gastric_40_4/slowfast_g40_hsb.py'
+            # config_path = './core/config/slowfast/slowfast_g40_hsb.py'
         elif args.slowfast_depth == 101:
             config_path = './core/config/slowfast/slowfast_g40_2.py'
 
