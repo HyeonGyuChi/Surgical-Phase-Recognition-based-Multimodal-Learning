@@ -152,7 +152,7 @@ def parse_opts():
     parser.add_argument('--dataset', 
             default='petraw', 
             type=str, 
-            choices=['mnist', 'jigsaws', 'misaw', 'petraw', 'gast'], 
+        #     choices=['mnist', 'jigsaws', 'misaw', 'petraw', 'gast'], 
             help='choose a multimodal dataset')
 
     parser.add_argument('--data_base_path',
@@ -239,6 +239,21 @@ def parse_opts():
                     },
             type=dict,
             help='How many CPUs to use for data loading')    
+    # parser.add_argument('--val_augmentations',
+    #         default={
+    #                 't_resize': [256],
+    #                 't_center_crop': [224],
+    #                 't_normalize': [
+    #                     [117.1168392375, 75.27494787, 67.37629650299999],
+    #                     [60.241352387999996, 51.261253263, 49.192591569],
+    #                     True,
+    #                 ],
+    #                 't_to_tensor': [],
+    #             #     't_normalize': [0.5,0.5],
+                    
+    #                 },
+    #         type=dict,
+    #         help='How many CPUs to use for data loading')    
 
     parser.add_argument('--infer_augmentations',
             default={

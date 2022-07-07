@@ -3,7 +3,7 @@ cd ..
 
 CUDA_VISIBLE_DEVICES=5 python main.py --num_gpus 1 \
                         --model 'lstm' \
-                        --input_size 28 --hidden_size 512 \
+                        --input_size 28 --hidden_size 256 \
                         --linear_dim 512 --n_layer 1 \
                         --batch_size 128 --dataset 'petraw' \
                         --data_base_path '/dataset3/multimodal' \
@@ -12,8 +12,9 @@ CUDA_VISIBLE_DEVICES=5 python main.py --num_gpus 1 \
                         --loss_fn 'cb' \
                         --target_metric 'Balance-Acc' \
                         --inference_per_frame \
+                        --overlap_ratio 0.5 \
                         --fold 1 \
-                        --max_epoch 100
+                        --max_epoch 50
 
 # CUDA_VISIBLE_DEVICES=4 python main.py --num_gpus 1 \
 #                         --model 'lstm' \

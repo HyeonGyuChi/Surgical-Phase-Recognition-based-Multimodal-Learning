@@ -7,9 +7,14 @@ import mmcv
 
 
 def generate_segmodel(args):
-    # config_path = './core/config/swin/upernet_swin_g40.py'
-    config_path = './core/config/ocr/ocr-hrnet_g40.py'
-    # config_path = './core/config/deeplabv3/deeplabv3_plus_g40_101.py'
+    if args.seg == 'swin':
+        config_path = './core/config/swin/upernet_swin_g40.py'
+    elif args.seg == 'ocr':
+        config_path = './core/config/ocr/ocr-hrnet_g40.py'
+    elif args.seg == 'deeplabv3':
+        config_path = './core/config/deeplabv3/deeplabv3_plus_g40_101.py'
+
+    print('load model config : ', config_path)
 
     config = mmcv.Config.fromfile(config_path)
     model = build_segmentor(config['model'])

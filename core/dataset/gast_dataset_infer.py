@@ -28,7 +28,7 @@ class InferGastrectomyDataset(torch.utils.data.Dataset):
                 'R117', 'R201', 'R202', 'R203', 'R204', 
                 'R205', 'R206', 'R207', 'R209', 'R210', 
                 'R301', 'R302', 'R304', 'R305', 'R313'],
-                # 1: ['R001',],
+                
                 2: ['R002', 'R003', 'R004', 'R005', 'R006', 
                 'R013', 'R014', 'R015', 'R017', 'R018', 
                 'R022', 'R048', 'R076', 'R084', 'R094', 
@@ -41,13 +41,15 @@ class InferGastrectomyDataset(torch.utils.data.Dataset):
                 'R074', 'R084', 'R100', 'R116', 'R117', 
                 'R201', 'R203', 'R205', 'R207', 'R208', 
                 'R210', 'R302', 'R303', 'R304', 'R313'],
+                4: ['R001',],
             },
 
             'valid': {
                 1: ['R003', 'R004', 'R006', 'R013', 'R017', 'R018', 'R022', 'R116', 'R208', 'R303'],
-                # 1: ['R003',],
+                
                 2: ['R001', 'R007', 'R010', 'R019', 'R056', 'R074', 'R100', 'R117', 'R203', 'R304'],
                 3: ['R005', 'R048', 'R076', 'R094', 'R202', 'R204', 'R206', 'R209', 'R301', 'R305'],
+                4: ['R003',],
             }
         }
 
@@ -134,17 +136,21 @@ class InferGastrectomyDataset(torch.utils.data.Dataset):
                     ch_full_ver = '{}_video_{}'.format(ch[:3], ch[4:])
 
                     for video in video_list:
+                        # print(patient, video, ch_full_ver)
                         if ch_full_ver == video:
                             fpath = p_path + '/{}'.format(ch_full_ver)
                             frame_list = glob(fpath + '/*.jpg')
                             frame_list = natsort.natsorted(frame_list)
 
+                            # print(frame_list[:3])
                             if len(t_frame_list) == 0:
                                 t_frame_list = frame_list
                                 t_label_list = self.labels[key_val][ch]
                             else:
                                 t_frame_list += frame_list
                                 t_label_list += self.labels[key_val][ch]
+                        
+                            break
 
                 self.data_dict['video'][key_val] = t_frame_list
                 self.labels[key_val] = t_label_list
@@ -225,6 +231,7 @@ class InferGastrectomyDataset(torch.utils.data.Dataset):
         
         if go_subsample:
             for key, _data in self.data_dict.items():
+                seq_data = []
                 for dir_name in _data.keys():
                     self.data_dict[key][dir_name] = _data[dir_name][::sample_rate]
 

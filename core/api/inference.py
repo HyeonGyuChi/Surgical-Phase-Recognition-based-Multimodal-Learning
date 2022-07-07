@@ -18,7 +18,7 @@ class Predictor():
     def setup(self):
         # Load dataset
         print('======= Load Dataset =======')
-        self.train_loader, self.val_loader = get_dataset(self.args)
+        self.train_loader, self.val_loader, ski_feature_num = get_dataset(self.args)
         self.set_class_weight()
         
         # Load model
@@ -123,18 +123,31 @@ class Predictor():
 
             y_hat = self.forward(x, y)
 
-            if y.shape[-1] > 1:
-                y = [y[..., yi].reshape(-1) for yi in range(y.shape[-1])]
+            # if y.shape[-1] > 1:
+            #     y = [y[..., yi].reshape(-1) for yi in range(y.shape[-1])]
             
+            # cls_hat = []
+            # for ti in range(len(self.n_class_list)):
+            #     classes = torch.argmax(y_hat[ti], -1)
+            #     cls_hat.append(classes.reshape(-1))
             cls_hat = []
-            for ti in range(len(self.n_class_list)):
-                classes = torch.argmax(y_hat[ti], -1)
-                cls_hat.append(classes.reshape(-1))
+
+            if self.args.dataset == 'petraw':
+                if y.shape[-1] > 1:
+                    y = [y[..., yi].reshape(-1) for yi in range(y.shape[-1])]
+
+                for ti in range(len(self.n_class_list)):
+                    classes = torch.argmax(y_hat[ti], -1)
+                    cls_hat.append(classes.reshape(-1))
+            else:
+                cls_hat = torch.argmax(y_hat, -1).unsqueeze(0)
+                y = y.unsqueeze(0)
             
             # break
             self.metric_helper.write_preds(cls_hat, y)
             
-        metric = self.metric_helper.calc_metric()
+        # metric = self.metric_helper.calc_metric()
+        metric = self.metric_helper.calc_metric2()
 
         return metric
         

@@ -187,6 +187,9 @@ class Trainer():
     def train(self):
         self.model.train()
         
+        cnt = 0
+        tot = int(float(len(self.train_loader.dataset)) * 0.2)
+
         for data in tqdm(self.train_loader, desc='[Epoch {} - Train Phase] : '.format(self.current_epoch)):
             self.optimizer.zero_grad()
             
@@ -222,13 +225,25 @@ class Trainer():
             
             self.metric_helper.write_loss(loss.item(), 'valid')
             
-            if y.shape[-1] > 1:
-                y = [y[..., yi].reshape(-1) for yi in range(y.shape[-1])]
+            # if y.shape[-1] > 1:
+            #     y = [y[..., yi].reshape(-1) for yi in range(y.shape[-1])]
             
+            # cls_hat = []
+            # for ti in range(len(self.n_class_list)):
+            #     classes = torch.argmax(y_hat[ti], -1)
+            #     cls_hat.append(classes.reshape(-1))
             cls_hat = []
-            for ti in range(len(self.n_class_list)):
-                classes = torch.argmax(y_hat[ti], -1)
-                cls_hat.append(classes.reshape(-1))
+
+            if self.args.dataset == 'petraw':
+                if y.shape[-1] > 1:
+                    y = [y[..., yi].reshape(-1) for yi in range(y.shape[-1])]
+
+                for ti in range(len(self.n_class_list)):
+                    classes = torch.argmax(y_hat[ti], -1)
+                    cls_hat.append(classes.reshape(-1))
+            else:
+                cls_hat = torch.argmax(y_hat, -1).unsqueeze(0)
+                y = y.unsqueeze(0)
             
             self.metric_helper.write_preds(cls_hat, y)
             
@@ -298,7 +313,13 @@ class Trainer():
                 if len(y.shape) == 3:
                     loss += self.loss_fn(y_hat[ti], y[:, 0, ti])
                 else:
-                    loss += self.loss_fn(y_hat, y[:, ti])
+                    if isinstance(y_hat, list):
+                        y_hat = y_hat[0]
+                        
+                    if 'gast_mm' in self.args.dataset:
+                        loss += self.loss_fn(y_hat, y)
+                    else:
+                        loss += self.loss_fn(y_hat, y[:, 0])
 
                 loss_div_cnt += 1
 
@@ -314,7 +335,10 @@ class Trainer():
                     if isinstance(y_hat, list):
                         y_hat = y_hat[0]
 
-                    loss += self.loss_fn[ti](y_hat, y[:, 0])
+                    if 'gast_mm' in self.args.dataset:
+                        loss += self.loss_fn[ti](y_hat, y)
+                    else:
+                        loss += self.loss_fn[ti](y_hat, y[:, 0])
 
                 loss_div_cnt += 1
                     
