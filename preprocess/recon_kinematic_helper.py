@@ -1,5 +1,6 @@
 from recon_kinematic_method import get_centroid, get_eoa, get_partial_path_length, get_cumulate_path_length, get_speed, get_velocity, get_IoU, get_gIoU, get_dIoU, get_cIoU
-from loader import PETRAWBBOXLoader
+from loader import PETRAWBBOXLoader, GASTRICBBOXLoader
+import numpy as np
 
 
 def normalized_pixel(pixel_np, size):
@@ -8,10 +9,10 @@ def normalized_pixel(pixel_np, size):
 def denormalized_pixel(pixel_np, size):  
     return pixel_np * size
 
-
 def get_bbox_loader(task, target_path, dsize, sample_interval):
     dataloader = {
         'PETRAW': PETRAWBBOXLoader,
+        'GASTRIC': GASTRICBBOXLoader,
     }
 
     return dataloader[task](target_path, dsize, sample_interval)
