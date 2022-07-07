@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 
 from core.dataset.jigsaws_dataset import JIGSAWSDataset
 from core.dataset.misaw_dataset import MISAWDataset
-from core.dataset.petraw_dataset import PETRAWDataset
+# from core.dataset.petraw_dataset import PETRAWDataset
 from core.dataset.gast_dataset import GastrectomyDataset
 from core.dataset.gast_dataset_infer import InferGastrectomyDataset
 from core.dataset.gast_dataset_mmver import GastrectomyDatasetMM
@@ -11,7 +11,7 @@ from torchvision.datasets import MNIST, CIFAR10
 
 dataset_dict = {
     'mnist': None,
-    'petraw': PETRAWDataset,
+    # 'petraw': PETRAWDataset,
     'misaw': MISAWDataset,
     'jigsaws': JIGSAWSDataset,
     'gast': GastrectomyDataset,

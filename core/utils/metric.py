@@ -95,7 +95,6 @@ class MetricHelper():
                     p_acc.append(p_TP / gt_cnt)
                 else:
                     p_acc.append(0)
-            
 
             metrics = {
                 'Epoch': self.epoch,
@@ -146,6 +145,7 @@ class MetricHelper():
                                                 np.mean(metrics['Recall']), np.mean(metrics['F1-Score'])]
         
             print('CLS BACC : {:.4f}'.format(metrics['Balance-Acc']))
+            print('CLS T-ACC : {:.4f}'.format(metrics['Total_P-Acc']))
 
         # save accuracy
         self.save_results()
@@ -163,6 +163,8 @@ class MetricHelper():
 
         plt.ylabel('Loss', fontsize=50)
         plt.xlabel('Epoch', fontsize=50)
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
         
         plt.plot(range(self.epoch), self.loss_dict['train'])
         plt.plot(range(self.epoch), self.loss_dict['valid'])
@@ -196,7 +198,6 @@ class MetricHelper():
         elif 'gast' in self.args.dataset:
             self.save_gast_results()
 
-
     def save_petraw_results(self):
         cols = ['Balance-Acc' + f"_{i}" for i in range(self.results.shape[-1])] + ['Acc' + f"_{i}" for i in range(self.results2.shape[-1])]
         save_path = self.args.save_path + '/result_{}.csv'.format(self.args.model)
@@ -222,10 +223,10 @@ class MetricHelper():
                 float_format='%.4f')
     
     def save_gast_results(self):
-        cols = ['Acc', 'mPre', 'mRe', 'mF1'] + ['Acc' + f"_{i}" for i in range(self.results2.shape[-1])]
+        cols = ['Balance-Acc', 'Acc', 'mPre', 'mRe', 'mF1'] + ['Acc' + f"_{i}" for i in range(self.results2.shape[-1])]
         save_path = self.args.save_path + '/result_{}.csv'.format(self.args.model)
         
-        data = [*self.results3[self.epoch-1, :], *list(self.results2[self.epoch-1, :])]
+        data = [*self.results[self.epoch-1, :], *self.results3[self.epoch-1, :], *list(self.results2[self.epoch-1, :])]
 
         if os.path.exists(save_path):
             df = pd.read_csv(save_path)

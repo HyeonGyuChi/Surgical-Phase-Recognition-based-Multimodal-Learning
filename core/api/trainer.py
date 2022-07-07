@@ -202,8 +202,6 @@ class Trainer():
             
             loss.backward()
             self.optimizer.step()
-
-            # break
             
         self.metric_helper.update_loss('train')
     
@@ -221,15 +219,20 @@ class Trainer():
             y_hat, loss = self.forward(x, y)
             
             self.metric_helper.write_loss(loss.item(), 'valid')
-            
-            if y.shape[-1] > 1:
-                y = [y[..., yi].reshape(-1) for yi in range(y.shape[-1])]
-            
+
             cls_hat = []
-            for ti in range(len(self.n_class_list)):
-                classes = torch.argmax(y_hat[ti], -1)
-                cls_hat.append(classes.reshape(-1))
-            
+
+            if self.args.dataset == 'petraw':
+                if y.shape[-1] > 1:
+                    y = [y[..., yi].reshape(-1) for yi in range(y.shape[-1])]
+
+                for ti in range(len(self.n_class_list)):
+                    classes = torch.argmax(y_hat[ti], -1)
+                    cls_hat.append(classes.reshape(-1))
+            else:
+                cls_hat = torch.argmax(y_hat, -1).unsqueeze(0)
+                y = y.unsqueeze(0)
+
             self.metric_helper.write_preds(cls_hat, y)
             
         self.metric_helper.update_loss('valid')
@@ -301,7 +304,11 @@ class Trainer():
                     if isinstance(y_hat, list):
                         y_hat = y_hat[0]
 
-                    loss += self.loss_fn(y_hat, y[:, ti])
+                    # loss += self.loss_fn(y_hat, y[:, ti])
+                    if self.args.dataset == 'gast_mm':
+                        loss += self.loss_fn(y_hat, y)
+                    else:
+                        loss += self.loss_fn(y_hat, y[:, 0])
 
                 loss_div_cnt += 1
 

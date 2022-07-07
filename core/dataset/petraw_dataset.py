@@ -412,12 +412,6 @@ class PETRAWDataset(torch.utils.data.Dataset):
                 self.data_dict['kinematic'][key_val] = data # no more standradization
                 setattr(self, 'num_of_ski_feature', data.shape[1]) # set num of feature 
 
-                # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:4])
-                # self.data_dict['kinematic'][key_val] = self.standardization(data[:,:8])
-                # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :8]), data[:, 8:10]), 1)
-                # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :28]), data[:, 28:]), 1) # 요기서 load
-                # self.data_dict['kinematic'][key_val] = np.concatenate((self.standardization(data[:, :4]), data[:, 8:]), 1)
-
     def load_labels(self):
         """
             Phase : 2

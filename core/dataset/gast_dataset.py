@@ -60,25 +60,35 @@ class GastrectomyDataset(torch.utils.data.Dataset):
             self.aug = Augmentor(self.args.val_augmentations)
 
     def __len__(self):
+        # if self.state == 'train':
+        #     return len(self.labels) #// self.args.clip_size
+        # else:
+        #     return len(self.labels) #// self.args.clip_size
+        # if self.state == 'train':
+        #     return self.n_clips
+        # else:
+            # return len(self.labels)
         return len(self.labels)
 
     def __getitem__(self, index):
         # if self.state == 'train':
-        init_label = self.labels[index]
-        ids = np.where(np.array(self.labels) == init_label)[0]
-        
-        while True:
-            rand_id = int(np.random.choice(ids, 1))
+        #     index = int(np.random.choice(len(self.labels), 1))
+            # init_label = self.labels[index]
+            # ids = np.where(np.array(self.labels) == init_label)[0]
+            
+            # while True:
+            #     rand_id = int(np.random.choice(ids, 1))
 
-            check = True
-            if rand_id - 16 >= 0 and rand_id + 15 < len(self.labels):
-                for ri in range(rand_id - 16, rand_id + 16):
-                    if self.labels[ri] != init_label:
-                        check = False
-                        break
-                if check:
-                    index = rand_id
-                    break
+            #     check = True
+            #     if rand_id - 16 >= 0 and rand_id + 15 < len(self.labels):
+            #         for ri in range(rand_id - 16, rand_id + 16):
+            #             if self.labels[ri] != init_label:
+            #                 check = False
+            #                 break
+
+            #         if check:
+            #             index = rand_id
+            #             break
 
         data = {}
         
@@ -194,20 +204,16 @@ class GastrectomyDataset(torch.utils.data.Dataset):
                             self.labels[key_val][ch] = self.labels[key_val][ch][:min_len]
                             
                             if len(t_frame_list) == 0:
-                                t_frame_list = frame_list
+                                t_frame_list = frame_list[::]
                                 t_label_list = self.labels[key_val][ch]
                             else:
                                 t_frame_list += frame_list
                                 t_label_list += self.labels[key_val][ch]
 
-                self.data_dict['video'][key_val] = t_frame_list
-                self.labels[key_val] = t_label_list
+                self.data_dict['video'][key_val] = t_frame_list[::self.args.subsample_ratio]
+                self.labels[key_val] = t_label_list[::self.args.subsample_ratio]
 
                 # print(key_val, len(t_frame_list), len(t_label_list))
-
-    def load_masks(self):
-        a = '/gastrectomy-40'
-        pass
 
     def load_seg_kinematics(self):
         """
@@ -216,7 +222,7 @@ class GastrectomyDataset(torch.utils.data.Dataset):
         """
         self.data_dict['kinematic'] = {}
 
-        target_path = self.data_path + '/Seg_kine7'
+        target_path = self.data_path + '/gastric/Kinematic_swin'
         file_list = glob(target_path + '/*.pkl')
         file_list = natsort.natsorted(file_list)
 
@@ -298,80 +304,171 @@ class GastrectomyDataset(torch.utils.data.Dataset):
 
             print('CLS WEIGHTS - ', idx, ' : ',  self.class_cnt[idx], self.class_weights[idx])
 
+    # def preprocessing2(self):
+    #     # subsample
+    #     sample_rate = self.args.subsample_ratio
+    #     go_subsample = sample_rate > 1 
+    #     seq_size = self.args.clip_size
+        
+    #     if go_subsample:
+    #         for key, _data in self.data_dict.items():
+    #             for dir_name in _data.keys():
+    #                 self.data_dict[key][dir_name] = _data[dir_name][::sample_rate]
+
+    #         for dir_name in self.labels.keys():
+    #             self.labels[dir_name] = self.labels[dir_name][::sample_rate]
+
+    #     # overlapping data sequence
+    #     # if self.state != 'train':
+    #     #     stride = int(seq_size)
+    #     # else:
+    #     #     stride = int(seq_size * self.args.overlap_ratio)
+    #     stride = 1
+
+    #     hf_seq = self.args.clip_size // 2
+
+    #     for key, _data in self.data_dict.items():
+    #         seq_data = []
+            
+    #         for dir_name in _data.keys():
+    #             d_len = len(_data[dir_name])
+                
+    #             for st in range(0, d_len, stride):
+    #                 if st-hf_seq < 0:
+    #                     diff = hf_seq-st
+
+    #                     if key == 'video':
+    #                         seq = [_data[dir_name][0] for _ in range(diff)] + _data[dir_name][st:st+(self.args.clip_size-diff)]
+
+    #                         # print(seq)
+    #                     else:
+    #                         pad = np.zeros((diff, *_data[dir_name][0].shape))
+
+    #                         seq = np.concatenate((pad, _data[dir_name][st:st+(self.args.clip_size-diff)]), 0)
+    #                     seq_data.append(seq)
+
+    #                 elif st+hf_seq >= d_len:
+    #                     diff = st+hf_seq-d_len
+
+    #                     if key == 'video':
+    #                         seq = _data[dir_name][st-hf_seq:] + [_data[dir_name][-1] for _ in range(diff)]
+    #                     else:
+    #                         pad = np.zeros((diff, *_data[dir_name][-1].shape))
+
+    #                         seq = np.concatenate((_data[dir_name][st-hf_seq:], pad), 0)
+    #                     seq_data.append(seq)
+
+    #                 else:
+    #                     seq_data.append(_data[dir_name][st-hf_seq:st+hf_seq])
+
+    #                 # if seq_data[-1].shape[0] != 8:
+    #                     # print(dir_name, st, seq_data[-1].shape)
+    #                 # if len(seq_data[-1]) != self.args.clip_size:
+    #                 #     print(dir_name, st, len(seq_data[-1]))
+
+    #         self.data_dict[key] = array(seq_data)
+
+    #     seq_data = []
+        
+    #     self.n_clips = 0
+
+    #     for d_num in self.labels.keys():
+    #         data = self.labels[d_num]
+    #         cur_data = data[0]
+
+    #         for di in range(1, len(data)):
+    #             if cur_data != data[di]:
+    #                 self.n_clips += 1
+    #                 cur_data = data[di]
+
+    #     for d_num in self.labels.keys():
+    #         data = self.labels[d_num]
+    #         d_len = len(data)
+
+    #         for st in range(0, d_len, stride):
+    #             seq_data.append(data[st:st+1])
+
+    #     self.labels = array(seq_data)
 
     def preprocessing2(self):
-        # subsample
-        sample_rate = self.args.subsample_ratio
-        go_subsample = sample_rate > 1 
         seq_size = self.args.clip_size
-        
-        if go_subsample:
-            for key, _data in self.data_dict.items():
-                for dir_name in _data.keys():
-                    self.data_dict[key][dir_name] = _data[dir_name][::sample_rate]
-
-            for dir_name in self.labels.keys():
-                self.labels[dir_name] = self.labels[dir_name][::sample_rate]
-
-        # overlapping data sequence
-        # if self.state != 'train':
-        #     stride = int(seq_size)
-        # else:
-        #     stride = int(seq_size * self.args.overlap_ratio)
         stride = 1
 
         hf_seq = self.args.clip_size // 2
 
-        for key, _data in self.data_dict.items():
-            seq_data = []
-            
-            for dir_name in _data.keys():
-                d_len = len(_data[dir_name])
-                
-                for st in range(0, d_len, stride):
-                    if st-hf_seq < 0:
-                        diff = hf_seq-st
-
-                        if key == 'video':
-                            seq = [_data[dir_name][0] for _ in range(diff)] + _data[dir_name][st:st+(self.args.clip_size-diff)]
-
-                            # print(seq)
-                        else:
-                            pad = np.zeros((diff, *_data[dir_name][0].shape))
-
-                            seq = np.concatenate((pad, _data[dir_name][st:st+(self.args.clip_size-diff)]), 0)
-                        seq_data.append(seq)
-
-                    elif st+hf_seq >= d_len:
-                        diff = st+hf_seq-d_len
-
-                        if key == 'video':
-                            seq = _data[dir_name][st-hf_seq:] + [_data[dir_name][-1] for _ in range(diff)]
-                        else:
-                            pad = np.zeros((diff, *_data[dir_name][-1].shape))
-
-                            seq = np.concatenate((_data[dir_name][st-hf_seq:], pad), 0)
-                        seq_data.append(seq)
-
-                    else:
-                        seq_data.append(_data[dir_name][st-hf_seq:st+hf_seq])
-
-                    # if seq_data[-1].shape[0] != 8:
-                        # print(dir_name, st, seq_data[-1].shape)
-                    if len(seq_data[-1]) != self.args.clip_size:
-                        print(dir_name, st, len(seq_data[-1]))
-
-            self.data_dict[key] = array(seq_data)
-
-        seq_data = []
+        new_data = [list() for _ in range(len(self.data_dict.keys()))]
+        new_label = []
         
+        self.n_clips = 0
+
+        for d_num in self.labels.keys():
+            data = self.labels[d_num]
+            cur_data = data[0]
+
+            for di in range(1, len(data)):
+                if cur_data != data[di]:
+                    self.n_clips += 1
+                    cur_data = data[di]
+
         for d_num in self.labels.keys():
             data = self.labels[d_num]
             d_len = len(data)
 
-            for st in range(0, d_len, stride):
-                seq_data.append(data[st:st+1])
+            if self.state == 'train':
+                for st in range(0, d_len-seq_size, stride):
+                    chk = True
+                    for add in range(1,seq_size+1):
+                        if data[st] != data[st+add]:
+                            chk = False
+                            break
+                    
+                    if chk:
+                        new_label.append(data[st:st+1])
 
-        self.labels = array(seq_data)
+                        for ki, key in enumerate(self.data_dict.keys()):
+                            _data = self.data_dict[key]
+                            _data2 = _data[d_num]
+                            new_data[ki].append(_data2[st:st+seq_size])
 
+            elif self.state == 'valid':
+                for st in range(0, d_len, stride):
+                    new_label.append(data[st:st+1])
+
+                for ki, key in enumerate(self.data_dict.keys()):
+                    _data = self.data_dict[key]
+                    _data2 = _data[d_num]
+                    d_len2 = len(_data2)
+
+                    for st in range(0, d_len2, stride):
+                        if st-hf_seq < 0:
+                            diff = hf_seq-st
+
+                            if key == 'video':
+                                seq = [_data2[0] for _ in range(diff)] + _data2[st:st+(self.args.clip_size-diff)]
+                            else:
+                                pad = np.zeros((diff, *_data2[0].shape))
+
+                                seq = np.concatenate((pad, _data2[st:st+(self.args.clip_size-diff)]), 0)
+                            new_data[ki].append(seq)
+
+                        elif st+hf_seq >= d_len:
+                            diff = st+hf_seq-d_len
+
+                            if key == 'video':
+                                seq = _data2[st-hf_seq:] + [_data2[-1] for _ in range(diff)]
+                            else:
+                                pad = np.zeros((diff, *_data2[-1].shape))
+
+                                seq = np.concatenate((_data2[st-hf_seq:], pad), 0)
+                            new_data[ki].append(seq)
+
+                        else:
+                            new_data[ki].append(_data2[st-hf_seq:st+hf_seq])
+            
+        for ki, key in enumerate(self.data_dict.keys()):
+            self.data_dict[key] = array(new_data[ki])
+
+        print(self.state, np.unique(new_label))
+
+        self.labels = array(new_label)
 
