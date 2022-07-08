@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from core.model.models import get_model
-from core.model.fusion_module import ConvFusion
+from core.model.fusion_module import ConvFusion, LinearFusion
 
 
 class MMNet(nn.Module):
@@ -57,6 +57,8 @@ class MMNet(nn.Module):
     def init_fusion_method(self):
         if self.args.fusion_type == 'conv':
             self.fusion_module = ConvFusion(self.args, self.n_modality, self.modality_size_list)
+        elif self.args.fusion_type == 'linear':
+            self.fusion_module = LinearFusion(self.args, self.n_modality, self.modality_size_list)
 
     def set_classifiers(self, n_class_list):
         self.fusion_module.set_classifiers(n_class_list)
