@@ -36,4 +36,4 @@ GPUS='4,5,6,7'
 PORT=29539
 
 CUDA_VISIBLE_DEVICES=$GPUS python -m torch.distributed.launch --nproc_per_node=$N_GPUS --master_port=29500 \
-        train.py $CONFIG --launcher pytorch #--validate
+        train.py $CONFIG --launcher pytorch --validate

@@ -56,20 +56,49 @@ def mapping(seg):
 
 
 def main():
+    from core.dataset.gast_dataset_infer import InferGastrectomyDataset
+    from torch.utils.data import DataLoader
+
     args = load_opts()
     args.dataset = 'infer_gast'
+    args.batch_size = 16
+    # args.seg = 'swin'
+    # args.seg = 'ocr'
+    args.seg = 'deeplabv3'
     # args.subsample_ratio = 1
     os.environ['CUDA_VISIBLE_DEVICES'] = args.cuda_list
 
     model = get_model(args)
     model = model.cuda()
+
+    res_path = f'logs/{args.seg}_g40_12/epoch_300.pth'
+    states = torch.load(res_path)
+    model.load_state_dict(states['state_dict'])
     model.eval()
-    train_loader, val_loader = get_dataset(args, return_ski_feature_num=False) # @HG modify
+
+    print('model loaded : ', res_path)
+    trainset = InferGastrectomyDataset(args, state='train')
+    valset = InferGastrectomyDataset(args, state='valid')
     
+    train_loader = DataLoader(trainset,
+                            batch_size=args.batch_size,
+                            shuffle=False,
+                            num_workers=args.num_workers * args.num_gpus,
+                            pin_memory=True)
+
+    val_loader = DataLoader(valset,
+                            batch_size=args.batch_size,
+                            shuffle=False,
+                            num_workers=args.num_workers * args.num_gpus,
+                            pin_memory=True)
+    
+    import time
+
     with torch.no_grad():
         for data_loader in [train_loader, val_loader]:
             for data in tqdm(data_loader):
                 li, imgs, lbs = data
+
                 img_metas = [
                     {
                         'filename': li,
@@ -93,7 +122,7 @@ def main():
                     img_path = li[i]
                     tokens = img_path.split('/')
 
-                    save_path = '/dataset3/multimodal/gastric/Segmentation_ocr' + '/{}/{}'.format(*tokens[-3:-1])
+                    save_path = f'/dataset3/multimodal/gastric/Segmentation_{args.seg}' + '/{}/{}'.format(*tokens[-3:-1])
                     os.makedirs(save_path, exist_ok=True)
                     save_path2 = save_path + '/{}.gz'.format(tokens[-1].split('.')[0])
                     # cv2.imwrite(save_path2, out)

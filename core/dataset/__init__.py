@@ -15,6 +15,7 @@ dataset_dict = {
     'misaw': MISAWDataset,
     'jigsaws': JIGSAWSDataset,
     'gast': GastrectomyDataset,
+    'gast_mm': GastrectomyDatasetMM,
     'infer_gast': InferGastrectomyDataset,
     'gast_mm': GastrectomyDatasetMM,
 }

@@ -32,6 +32,4 @@ def get_loss(args):
             return loss_dict[args.loss_fn](weight=weights)
         else:
             return loss_dict[args.loss_fn]()
-
         
-    

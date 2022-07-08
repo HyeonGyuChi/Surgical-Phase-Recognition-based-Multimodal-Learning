@@ -27,8 +27,8 @@ def main():
     trainer = Trainer(args)
     trainer.fit()
 
-    predictor = Predictor(args)
-    predictor.inference()
+    # predictor = Predictor(args)
+    # predictor.inference()
     
 if __name__ == '__main__':
     main()

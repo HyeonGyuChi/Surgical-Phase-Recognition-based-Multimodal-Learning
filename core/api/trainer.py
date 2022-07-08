@@ -187,6 +187,9 @@ class Trainer():
     def train(self):
         self.model.train()
         
+        cnt = 0
+        tot = int(float(len(self.train_loader.dataset)) * 0.2)
+
         for data in tqdm(self.train_loader, desc='[Epoch {} - Train Phase] : '.format(self.current_epoch)):
             self.optimizer.zero_grad()
             
@@ -219,7 +222,6 @@ class Trainer():
             y_hat, loss = self.forward(x, y)
             
             self.metric_helper.write_loss(loss.item(), 'valid')
-
             cls_hat = []
 
             if self.args.dataset == 'petraw':
@@ -232,7 +234,6 @@ class Trainer():
             else:
                 cls_hat = torch.argmax(y_hat, -1).unsqueeze(0)
                 y = y.unsqueeze(0)
-
             self.metric_helper.write_preds(cls_hat, y)
             
         self.metric_helper.update_loss('valid')
